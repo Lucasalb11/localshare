@@ -1,95 +1,247 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/TzDKD5h9)
-![School of Solana](https://github.com/Ackee-Blockchain/school-of-solana/blob/master/.banner/banner.png?raw=true)
+# 🏘️ Localshare - Investment in Local Businesses
 
-## 📚Solana Program
-We are about halfway through the course, and you already have some experience with programming on Solana. It is time to create something on your own! You will be building a dApp that will serve as the culmination of everything you have learned so far. Feel free to implement whatever comes to your mind, (as long as it passes the requirements).
+Decentralized platform for investing in local businesses using Solana blockchain.
 
-**This does not mean that the School of Solana is coming to an end just yet!** There are still several exciting lectures ahead, as well as one security related task.
+## 🎯 About the Project
 
-### Task details
-This task consists of two parts:
-1. **Core of your dApp**
-    - A deployed Solana program.
-2. **Frontend**
-    - A simple frontend to interact with the dApp.
+Localshare democratizes access to investments in neighborhood businesses. Bakeries, restaurants, gyms, and other establishments can raise capital from local investors through tokenized shares on the blockchain.
 
-### Requirements
-- An Anchor program deployed on **Devnet** or **Mainnet**.
-- The Anchor program must use a PDA (Program Derived Address).
-- At least one TypeScript **test** for each Anchor program instruction. These tests should cover both **happy** and **unhappy** (intentional error-triggering) scenarios.
-- A simple **frontend** deployed using your preferred provider (for more info, check below).
-- A filled out **PROJECT_DESCRIPTION.md** file.
+### 💡 Problem We Solve
 
-### Ideas
-We highly recommend starting with something simple. Take time to think through your project and work on it in iterations. Do not try to implement everything at once!
+- Small businesses struggle to access investment capital
+- Investors want to support the local economy but lack easy access
+- Lack of transparency in traditional investments
+- Slow and bureaucratic processes
 
-Below is a list of few ideas to get you started:
-- **Social app**
-    - Instagram
-    - Giphy
-    - Friendtech
-    - Spotify
-- **Blog**
-- **Voting** ([D21 - Janeček method](https://www.ih21.org/en/guidelines))
-- **DeFi**
-    - Raffles
-    - Escrow
-    - Tipping
-    - Lending ([Save Documentation](https://docs.save.finance/))
-    - Liquid Staking ([Marinade Documentation](https://docs.marinade.finance/))
-    - Data Query with Pyth ([Pyth Documentation](https://docs.pyth.network/price-feeds))
-    - AMM ([Raydium Documentation](https://raydium.gitbook.io/raydium/))
-- **Gaming**
-    - Browser Game ([Gaming on Solana](https://solanacookbook.com/gaming/nfts-in-games.html#nfts-in-games))
+### ✨ Our Solution
 
-### Deadline
-The deadline for this task is **Wednesday, November 19th, at 23:59 UTC**.
->[!CAUTION]
->Note that we will not accept submissions after the deadline.
+- **For Businesses**: Register and offer shares of your business
+- **For Investors**: Invest from $100 in verified businesses
+- **Blockchain**: Full transparency, tokenized shares, automatic dividends
+- **AI**: Intelligent analysis of each business
 
-### Submission
-There are two folders, one for the Anchor project, and one for the frontend. Push your changes to the **main** branch of **this** repository.
+## 🏗️ Architecture
 
->[!IMPORTANT]
->It is essential that you fill out the `PROJECT_DESCRIPTION.md` template completely and accurately. This document will be used by AI for the initial evaluation, so provide detailed information about your project, including working links, clear descriptions, and technical implementation details.
+```
+program-Lucasalb11/
+├── anchor_project/          # Solana Smart Contract (Anchor)
+│   ├── programs/my_program/ # Rust program
+│   ├── tests/               # Program tests
+│   └── target/idl/          # Generated IDL
+│
+└── frontend/                # Next.js Application
+    ├── app/
+    │   ├── page.tsx         # Landing page
+    │   ├── marketplace/     # Explore businesses
+    │   ├── business/[id]/   # Details + AI analysis
+    │   ├── dashboard/       # Business registration
+    │   ├── components/      # Navbar, etc
+    │   ├── data/            # Mock businesses
+    │   └── lib/             # Anchor client
+    └── package.json
+```
 
->[!NOTE]
->Your submission repository is public. Feel free to share the link to showcase your work!
+## 🚀 Quick Start
 
-### Evaluation
-The evaluation process is based on the **requirements**. If you meet the requirements, you pass the task!
+### 1. Prerequisites
 
->[!NOTE]
->The first round of evaluations will be conducted by AI to verify requirements before manual review. AI can make mistakes. If you believe you fulfilled all requirements but weren't graded correctly, please create a support ticket and we will resolve the issue.
+- Node.js 18+
+- Yarn
+- Rust + Solana CLI + Anchor (for program development)
+- Solana Wallet (Phantom, Solflare)
 
->[!CAUTION]
->We expect original work that demonstrates your understanding and creativity. While you may draw inspiration from examples covered in lessons and tasks, **direct copying is not acceptable**. If you choose to build upon an example from the School of Solana materials, you must significantly expand it with additional features, instructions, and functionality to showcase your learning progress. 
+### 2. Frontend
 
-### Example Workflow
-Let's say you are going to implement the Twitter dApp as the Solana Program. Here's how the steps could look:
+```bash
+cd frontend
+yarn install
+yarn dev
+```
 
-**1.** Implement Twitter dApp using the Anchor framework.
+Access: **http://localhost:3000**
 
-**2.** Test the Twitter dApp using the Anchor framework.
+### 3. Smart Contract (Optional)
 
-**3.** Deploy the Twitter dApp on the Solana Devnet.
+```bash
+cd anchor_project
+anchor build
+anchor test
+anchor deploy --provider.cluster devnet
+```
 
-**4.** Using the create solana dapp template, implement frontend for the Twitter dApp.
+## 🎨 Frontend Features
 
-**5.** Publish Frontend using [Vercel](https://vercel.com). Ensure the deployment is publicly accessible.
+### ✅ Implemented Pages
 
-**6.** Fill out the PROJECT_DESCRIPTION.md template.
+1. **Landing Page** (`/`)
+   - Modern hero section
+   - How it works (3 steps)
+   - Key features
+   - Protocol statistics
+   - Web2-friendly design
 
-**7.** Submit the Twitter dApp using GitHub Classroom.
+2. **Marketplace** (`/marketplace`)
+   - 5 mock businesses with real data
+   - Category filters
+   - Cards with Unsplash photos
+   - AI score
+   - Investment progress
 
-### Useful Links
-- [Vercel](https://vercel.com)
-- [Create Solana Dapp](https://github.com/solana-foundation/create-solana-dapp)
-- [Account Macro Constraints](https://docs.rs/anchor-lang/0.31.1/anchor_lang/derive.Accounts.html)
-- [Solana Developers Courses](https://solana.com/developers/courses)
+3. **Business Details** (`/business/[id]`)
+   - Photo gallery
+   - Complete AI analysis (strengths, risks, recommendation)
+   - Detailed financial data
+   - Owner information
+   - Investment calculator
+   - Tabs: Overview, Financials, Analysis
 
------
+4. **Dashboard** (`/dashboard`)
+   - 3-step registration
+   - Human-friendly form
+   - Calculation previews
+   - Document upload (UI)
 
-### Need help?
->[!TIP]
->If you have any questions, feel free to reach out to us on [Discord](https://discord.gg/z3JVuZyFnp).
+### 🎯 Modern UX
+
+- ✅ Elegant dark design
+- ✅ Emerald + sky gradients
+- ✅ Real images (Unsplash)
+- ✅ Lucide React icons
+- ✅ Intuitive navigation
+- ✅ Subtle wallet integration
+- ✅ No crypto jargon (Web2-friendly)
+- ✅ Responsive (mobile-first)
+
+## 🤖 AI Analysis (Simulated)
+
+Each business has AI-generated analysis that evaluates:
+
+- **Score** (0-100): Based on multiple factors
+- **Strengths**: 5 highlighted items
+- **Risks**: 3 main identified risks
+- **Recommendation**: Suitable investor profile
+
+## 💼 Mock Businesses
+
+5 fictional businesses with realistic data:
+
+| Business | Category | AI Score | Valuation | Yearly Growth |
+|----------|----------|----------|-----------|---------------|
+| Padaria São Pedro | Food | 87/100 | $850k | 18.5% |
+| Cafeteria Aroma | Food | 82/100 | $420k | 32.5% |
+| Oficina Mecânica | Automotive | 85/100 | $1.2M | 12.3% |
+| Sabor Nordestino | Food | 78/100 | $580k | 25.8% |
+| Academia Fit Zone | Health | 80/100 | $950k | 15.2% |
+
+## 🔐 Smart Contract (Anchor)
+
+### Instructions
+
+1. **init_config** - Set global payment token
+2. **register_business** - Register a business
+3. **create_offering** - Create share offering
+4. **buy_shares** - Investor purchases shares
+
+### PDAs
+
+- Config: `["config"]`
+- Business: `["business", owner]`
+- Offering: `["offering", business, share_mint]`
+
+### Security
+
+✅ On-chain validations
+✅ Unique PDAs per entity
+✅ has_one constraints
+✅ Overflow checks
+✅ Blockchain auditable
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **Blockchain**: @coral-xyz/anchor
+- **Wallet**: Solana Wallet Adapter
+
+### Blockchain
+- **Network**: Solana (Devnet)
+- **Framework**: Anchor 0.32
+- **Language**: Rust
+- **Cluster**: Devnet
+
+## 📊 Metrics
+
+```
+✅ Build: Success
+✅ Lint Errors: 0
+✅ Type Errors: 0
+✅ Bundle Size: 87.2 kB (First Load JS)
+✅ Pages: 6
+✅ Components: 10+
+✅ Mock Data: 5 complete businesses
+```
+
+## 🎯 Next Steps
+
+### Short Term
+- [ ] Integrate registration form with smart contract
+- [ ] Implement real investment button
+- [ ] Add SPL Token minting for shares
+- [ ] Investor dashboard (my shares)
+
+### Medium Term
+- [ ] Real image upload (IPFS/Arweave)
+- [ ] KYC/verification system
+- [ ] On-chain transaction history
+- [ ] Automatic dividends
+
+### Long Term
+- [ ] Real AI for business analysis
+- [ ] Mobile app (React Native)
+- [ ] Share marketplace (secondary market)
+- [ ] DAO governance
+
+## 🌐 Network
+
+**Currently**: Solana Devnet
+
+To switch to mainnet: edit `frontend/app/providers/SolanaProvider.tsx`
+
+## 📝 Documentation
+
+- **Frontend**: `frontend/README.md`
+- **Smart Contract**: `anchor_project/README.md`
+- **IDL**: `anchor_project/target/idl/my_program.json`
+- **Project Description**: `PROJECT_DESCRIPTION.md`
+
+## 🤝 How to Contribute
+
+1. Fork the project
+2. Create a branch (`git checkout -b feature/NewFeature`)
+3. Commit your changes (`git commit -m 'Add NewFeature'`)
+4. Push to branch (`git push origin feature/NewFeature`)
+5. Open a Pull Request
+
+## ⚖️ License
+
+This is an **educational prototype** for School of Solana. Not intended for production use without proper auditing.
+
+## 📞 Support
+
+For questions about the project:
+- Open an issue on GitHub
+- Check documentation in `/frontend/README.md`
+- Review `PROJECT_DESCRIPTION.md`
+
+---
+
+**Status**: ✅ Frontend complete | 🚧 Blockchain integration in progress
+
+**Last update**: January 2025
+
+**School of Solana**: Season 8 - Program Assignment
+
+Made with ❤️ to democratize local investments

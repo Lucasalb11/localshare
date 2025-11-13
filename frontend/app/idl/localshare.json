@@ -1,0 +1,570 @@
+{
+  "address": "8sTHpKZ2jbTNBzCxmwFytcift1j6J2Nfj1s9WHGSoE5Y",
+  "metadata": {
+    "name": "my_program",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "docs": [
+    "Programa Localshare Lite",
+    "Sistema de compartilhamento de investimentos em negócios locais"
+  ],
+  "instructions": [
+    {
+      "name": "buy_shares",
+      "docs": [
+        "Permite que investidores comprem shares de um negócio",
+        "Realiza a transferência de fundos e atribui as shares ao comprador",
+        "",
+        "# Segurança",
+        "- Valida que a oferta está ativa",
+        "- Valida disponibilidade de shares",
+        "- Transferência atômica de tokens via CPI",
+        "- Desativa oferta automaticamente quando esgotada"
+      ],
+      "discriminator": [
+        40,
+        239,
+        138,
+        154,
+        8,
+        37,
+        106,
+        108
+      ],
+      "accounts": [
+        {
+          "name": "offering",
+          "docs": [
+            "Conta Offering de onde as shares serão compradas",
+            "Deve ser mutável para atualizar remaining_shares"
+          ],
+          "writable": true
+        },
+        {
+          "name": "business",
+          "docs": [
+            "Conta Business relacionada à oferta"
+          ]
+        },
+        {
+          "name": "owner",
+          "docs": [
+            "Proprietário do negócio (recebe o pagamento)",
+            "Referenciado como 'owner' pelo has_one constraint"
+          ],
+          "writable": true,
+          "relations": [
+            "business"
+          ]
+        },
+        {
+          "name": "buyer",
+          "docs": [
+            "Comprador que está adquirindo as shares"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "System program (para transferências SOL)"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "create_offering",
+      "docs": [
+        "Cria uma nova oferta de shares para um negócio",
+        "Define quantidade, preço e outras características das shares",
+        "",
+        "# Segurança",
+        "- Apenas o owner do negócio pode criar ofertas",
+        "- Validações de preço e quantidade",
+        "- Payment mint vem da config global"
+      ],
+      "discriminator": [
+        48,
+        254,
+        213,
+        82,
+        85,
+        141,
+        15,
+        220
+      ],
+      "accounts": [
+        {
+          "name": "offering",
+          "docs": [
+            "Conta Offering sendo inicializada como PDA",
+            "Space: 8 (discriminator) + 32 (business) + 32 (share_mint) + 32 (payment_mint) +",
+            "8 (price_per_share) + 8 (remaining_shares) + 1 (is_active) + 1 (bump) = 122 bytes"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  102,
+                  102,
+                  101,
+                  114,
+                  105,
+                  110,
+                  103
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "business"
+              },
+              {
+                "kind": "account",
+                "path": "business.share_mint",
+                "account": "Business"
+              }
+            ]
+          }
+        },
+        {
+          "name": "business",
+          "docs": [
+            "Conta Business que está criando a oferta",
+            "Deve ter has_one = owner para validação"
+          ]
+        },
+        {
+          "name": "config",
+          "docs": [
+            "Conta Config global para obter o payment_mint"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "docs": [
+            "Proprietário do negócio (deve assinar e pagar)"
+          ],
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "business"
+          ]
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "System program para criar a conta"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "price_per_share",
+          "type": "u64"
+        },
+        {
+          "name": "initial_shares",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "init_config",
+      "docs": [
+        "Inicializa a configuração global do programa",
+        "Responsável por definir parâmetros iniciais e autoridades",
+        "",
+        "# Segurança",
+        "- Só pode ser chamado uma vez (PDA única)",
+        "- Admin é definido como o assinante da transação"
+      ],
+      "discriminator": [
+        23,
+        235,
+        115,
+        232,
+        168,
+        96,
+        1,
+        231
+      ],
+      "accounts": [
+        {
+          "name": "config",
+          "docs": [
+            "Conta Config sendo inicializada como PDA",
+            "Space: 8 (discriminator) + 32 (admin) + 32 (payment_mint) + 1 (bump) = 73 bytes"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "docs": [
+            "Administrador que paga pela criação e será definido como admin"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "System program para criar a conta"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "payment_mint",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "register_business",
+      "docs": [
+        "Registra um novo negócio no protocolo",
+        "Permite que empresários locais se registrem para oferecer shares",
+        "",
+        "# Segurança",
+        "- Cada owner pode ter apenas um negócio (PDA única por owner)",
+        "- Nome é validado para não exceder o limite de tamanho"
+      ],
+      "discriminator": [
+        73,
+        228,
+        5,
+        59,
+        229,
+        67,
+        133,
+        82
+      ],
+      "accounts": [
+        {
+          "name": "business",
+          "docs": [
+            "Conta Business sendo inicializada como PDA",
+            "Space: 8 (discriminator) + 32 (owner) + (4 + 50) (name String) + 32 (share_mint) + 1 (bump) = 127 bytes"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  115,
+                  105,
+                  110,
+                  101,
+                  115,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "owner",
+          "docs": [
+            "Proprietário do negócio (empresário que paga pela criação)"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "System program para criar a conta"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "name": "share_mint",
+          "type": "pubkey"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Business",
+      "discriminator": [
+        60,
+        203,
+        129,
+        133,
+        68,
+        183,
+        210,
+        177
+      ]
+    },
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "Offering",
+      "discriminator": [
+        128,
+        234,
+        9,
+        226,
+        125,
+        227,
+        146,
+        39
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "EmptyBusinessName",
+      "msg": "O nome do negócio não pode ser vazio"
+    },
+    {
+      "code": 6001,
+      "name": "BusinessNameTooLong",
+      "msg": "O nome do negócio não pode ter mais de 50 caracteres"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidPrice",
+      "msg": "O preço por share deve ser maior que zero"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidShareAmount",
+      "msg": "A quantidade de shares deve ser maior que zero"
+    },
+    {
+      "code": 6004,
+      "name": "MathOverflow",
+      "msg": "Operação matemática resultou em overflow"
+    },
+    {
+      "code": 6005,
+      "name": "OfferingNotActive",
+      "msg": "A oferta não está ativa"
+    },
+    {
+      "code": 6006,
+      "name": "InsufficientShares",
+      "msg": "Não há shares suficientes disponíveis"
+    },
+    {
+      "code": 6007,
+      "name": "InvalidBusiness",
+      "msg": "Negócio inválido ou não corresponde à oferta"
+    },
+    {
+      "code": 6008,
+      "name": "InvalidBusinessOwner",
+      "msg": "Proprietário do negócio inválido"
+    }
+  ],
+  "types": [
+    {
+      "name": "Business",
+      "docs": [
+        "Representa um negócio registrado no protocolo",
+        "PDA: [\"business\", owner.key()]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "docs": [
+              "Proprietário do negócio (empresário)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "name",
+            "docs": [
+              "Nome do negócio (máximo 50 caracteres)"
+            ],
+            "type": "string"
+          },
+          {
+            "name": "share_mint",
+            "docs": [
+              "Mint das shares deste negócio (NFT ou Fungible Token)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed da PDA"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Config",
+      "docs": [
+        "Configuração global do protocolo",
+        "PDA: [\"config\"]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "admin",
+            "docs": [
+              "Administrador do protocolo (pode atualizar configurações)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "payment_mint",
+            "docs": [
+              "Mint do token usado para pagamentos (ex: USDC)"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed da PDA"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Offering",
+      "docs": [
+        "Representa uma oferta de shares de um negócio",
+        "PDA: [\"offering\", business.key(), share_mint.key()]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "business",
+            "docs": [
+              "Referência ao negócio que criou esta oferta"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "share_mint",
+            "docs": [
+              "Mint das shares sendo oferecidas"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "payment_mint",
+            "docs": [
+              "Mint do token aceito como pagamento"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "price_per_share",
+            "docs": [
+              "Preço por share (em lamports do payment_mint)"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "remaining_shares",
+            "docs": [
+              "Quantidade de shares ainda disponíveis"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "is_active",
+            "docs": [
+              "Se a oferta está ativa"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed da PDA"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}
+

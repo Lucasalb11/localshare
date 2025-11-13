@@ -1,0 +1,463 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { mockBusinesses } from "../../data/mockBusinesses";
+import { useLocalshareProgram } from "../../hooks/useLocalshareProgram";
+import { getBusinessPda, getOfferingPda } from "../../lib/localshare";
+import * as anchor from "@coral-xyz/anchor";
+import {
+  MapPin,
+  TrendingUp,
+  Users,
+  Star,
+  Calendar,
+  DollarSign,
+  ChevronLeft,
+  Shield,
+  AlertTriangle,
+  CheckCircle,
+  Sparkles,
+} from "lucide-react";
+
+interface PageProps {
+  params: { id: string };
+}
+
+export default function BusinessDetailPage({ params }: PageProps) {
+  const { id } = params;
+  const { connected, publicKey } = useWallet();
+  const { program } = useLocalshareProgram();
+  const [selectedTab, setSelectedTab] = useState<"overview" | "financials" | "analysis">("overview");
+  const [investmentAmount, setInvestmentAmount] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
+  const [statusType, setStatusType] = useState<"success" | "error" | "">("");
+
+  const business = mockBusinesses.find((b) => b.id === id);
+
+  if (!business) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-slate-50 mb-2">Negócio não encontrado</h1>
+          <Link href="/marketplace" className="text-emerald-400 hover:underline">
+            Voltar ao marketplace
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const calculateShares = () => {
+    const amount = parseFloat(investmentAmount) || 0;
+    return Math.floor(amount / business.sharesInfo.pricePerShare);
+  };
+
+
+  const handleBuyShares = async () => {
+    if (!program || !publicKey || !business) {
+      setStatus("Please connect your wallet first");
+      setStatusType("error");
+      return;
+    }
+
+    const shares = calculateShares();
+    if (shares <= 0) {
+      setStatus("Invalid investment amount");
+      setStatusType("error");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setStatus("Preparing transaction...");
+      setStatusType("");
+
+      // For demo: use mock owner address (in real scenario, fetch from business account)
+      // In production, you would fetch the business account to get the real owner
+      const mockOwnerPubkey = new PublicKey("BvWN5kqzufmJDLfQbpvGWbfL4ZSBKY3bH3EoJ4sXDq5i");
+      const mockShareMint = new PublicKey("ShareMint111111111111111111111111111111111");
+
+      // Get PDAs
+      const [businessPdaKey] = getBusinessPda(mockOwnerPubkey);
+      const [offeringPdaKey] = getOfferingPda(businessPdaKey, mockShareMint);
+
+      setStatus("Sending transaction to blockchain...");
+
+      // Call buy_shares instruction
+      const tx = await program.methods
+        .buyShares(new anchor.BN(shares))
+        .accounts({
+          offering: offeringPdaKey,
+          business: businessPdaKey,
+          owner: mockOwnerPubkey, // Business owner (receives payment)
+          buyer: publicKey, // Current wallet (pays)
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      setStatus(`✅ Purchase successful! TX: ${tx.slice(0, 8)}...`);
+      setStatusType("success");
+      setInvestmentAmount("");
+
+      // Open explorer
+      setTimeout(() => {
+        window.open(`https://explorer.solana.com/tx/${tx}?cluster=devnet`, "_blank");
+      }, 1000);
+    } catch (error: any) {
+      console.error("Error buying shares:", error);
+      setStatus(`❌ Error: ${error.message || "Transaction failed"}`);
+      setStatusType("error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950">
+      {/* Back Button */}
+      <div className="border-b border-slate-800 bg-slate-900/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Link
+            href="/marketplace"
+            className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-50 transition-colors"
+          >
+            <ChevronLeft className="w-5 h-5" />
+            Voltar ao marketplace
+          </Link>
+        </div>
+      </div>
+
+      {/* Hero Section */}
+      <div className="relative h-96 overflow-hidden">
+        <img
+          src={business.images[0]}
+          alt={business.name}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
+        
+        <div className="absolute bottom-0 left-0 right-0">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="inline-block px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-sm mb-4">
+                  {business.category}
+                </div>
+                <h1 className="text-5xl font-bold text-slate-50 mb-4">{business.name}</h1>
+                <div className="flex items-center gap-6 text-slate-300">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5" />
+                    <span>{business.location.city}, {business.location.state}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                    <span>{business.metrics.rating}/5.0</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    <span>{business.metrics.yearsInBusiness} anos no mercado</span>
+                  </div>
+                </div>
+              </div>
+
+              {business.aiAnalysis && (
+                <div className="flex flex-col items-end">
+                  <div className="px-6 py-3 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-sky-500/20 backdrop-blur-sm border border-emerald-500/30">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Sparkles className="w-5 h-5 text-emerald-400" />
+                      <span className="text-sm text-slate-300">Score IA</span>
+                    </div>
+                    <div className="text-4xl font-bold text-slate-50">{business.aiAnalysis.score}<span className="text-2xl text-slate-400">/100</span></div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Tabs */}
+            <div className="flex gap-4 border-b border-slate-800">
+              {[
+                { key: "overview", label: "Visão Geral" },
+                { key: "financials", label: "Financeiro" },
+                { key: "analysis", label: "Análise IA" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setSelectedTab(tab.key as any)}
+                  className={`px-6 py-3 font-medium transition-colors border-b-2 ${
+                    selectedTab === tab.key
+                      ? "border-emerald-500 text-emerald-400"
+                      : "border-transparent text-slate-400 hover:text-slate-300"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Tab Content */}
+            {selectedTab === "overview" && (
+              <div className="space-y-6">
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                  <h3 className="text-xl font-bold text-slate-50 mb-4">Sobre o Negócio</h3>
+                  <p className="text-slate-300 whitespace-pre-line leading-relaxed">
+                    {business.description}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                    <Users className="w-8 h-8 text-emerald-400 mb-3" />
+                    <p className="text-3xl font-bold text-slate-50">{business.metrics.employees}</p>
+                    <p className="text-sm text-slate-400">Funcionários</p>
+                  </div>
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                    <TrendingUp className="w-8 h-8 text-sky-400 mb-3" />
+                    <p className="text-3xl font-bold text-slate-50">{business.metrics.monthlyCustomers.toLocaleString()}</p>
+                    <p className="text-sm text-slate-400">Clientes/mês</p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                  <h3 className="text-xl font-bold text-slate-50 mb-4">Proprietário</h3>
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={business.owner.avatar}
+                      alt={business.owner.name}
+                      className="w-16 h-16 rounded-full"
+                    />
+                    <div>
+                      <p className="font-semibold text-slate-50">{business.owner.name}</p>
+                      <p className="text-sm text-slate-400">{business.owner.role}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {selectedTab === "financials" && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                    <p className="text-sm text-slate-400 mb-2">Receita Mensal</p>
+                    <p className="text-3xl font-bold text-emerald-400">
+                      R$ {business.financials.monthlyRevenue.toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                    <p className="text-sm text-slate-400 mb-2">Lucro Líquido</p>
+                    <p className="text-3xl font-bold text-sky-400">
+                      R$ {business.financials.netProfit.toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                    <p className="text-sm text-slate-400 mb-2">Custos Mensais</p>
+                    <p className="text-3xl font-bold text-slate-400">
+                      R$ {business.financials.monthlyCosts.toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                    <p className="text-sm text-slate-400 mb-2">Crescimento Anual</p>
+                    <p className="text-3xl font-bold text-violet-400">
+                      +{business.financials.yearlyGrowth}%
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                  <h3 className="text-xl font-bold text-slate-50 mb-4">Valuation</h3>
+                  <p className="text-4xl font-bold text-slate-50 mb-2">
+                    R$ {business.financials.valuation.toLocaleString('pt-BR')}
+                  </p>
+                  <p className="text-sm text-slate-400">
+                    Baseado em múltiplos de lucro e avaliação de mercado
+                  </p>
+                </div>
+
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                  <h3 className="text-xl font-bold text-slate-50 mb-4">Documentos</h3>
+                  <div className="space-y-3">
+                    {[
+                      { label: "Plano de Negócios", has: business.documents.hasBusinessPlan },
+                      { label: "Relatório Financeiro", has: business.documents.hasFinancialReport },
+                      { label: "Documentação Legal", has: business.documents.hasLegalDocs },
+                    ].map((doc) => (
+                      <div key={doc.label} className="flex items-center justify-between">
+                        <span className="text-slate-300">{doc.label}</span>
+                        {doc.has ? (
+                          <CheckCircle className="w-5 h-5 text-emerald-400" />
+                        ) : (
+                          <AlertTriangle className="w-5 h-5 text-amber-400" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {selectedTab === "analysis" && business.aiAnalysis && (
+              <div className="space-y-6">
+                <div className="bg-gradient-to-br from-emerald-500/10 to-sky-500/10 border border-emerald-500/30 rounded-2xl p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Sparkles className="w-6 h-6 text-emerald-400" />
+                    <h3 className="text-xl font-bold text-slate-50">Análise da Inteligência Artificial</h3>
+                  </div>
+                  <p className="text-slate-300 leading-relaxed">{business.aiAnalysis.recommendation}</p>
+                </div>
+
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                  <h3 className="text-lg font-bold text-slate-50 mb-4 flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-emerald-400" />
+                    Pontos Fortes
+                  </h3>
+                  <ul className="space-y-3">
+                    {business.aiAnalysis.strengths.map((strength, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                        <span className="text-slate-300">{strength}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                  <h3 className="text-lg font-bold text-slate-50 mb-4 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+                    Riscos Identificados
+                  </h3>
+                  <ul className="space-y-3">
+                    {business.aiAnalysis.risks.map((risk, index) => (
+                      <li key={index} className="flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                        <span className="text-slate-300">{risk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar - Investment */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24 space-y-6">
+              <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
+                <h3 className="text-xl font-bold text-slate-50 mb-6">Investir Agora</h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm text-slate-400 mb-2">Preço por cota</p>
+                    <p className="text-2xl font-bold text-slate-50">
+                      R$ {business.sharesInfo.pricePerShare.toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-sm text-slate-400 mb-2">Cotas disponíveis</p>
+                    <p className="text-lg font-semibold text-slate-50">
+                      {business.sharesInfo.availableShares}/{business.sharesInfo.totalShares}
+                    </p>
+                    <div className="w-full bg-slate-800 rounded-full h-2 mt-2">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-500 to-sky-500 rounded-full"
+                        style={{
+                          width: `${(business.sharesInfo.availableShares / business.sharesInfo.totalShares) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-slate-800 pt-4">
+                    <label className="block text-sm text-slate-400 mb-2">
+                      Valor do investimento (R$)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder={`Mínimo R$ ${business.sharesInfo.minInvestment}`}
+                      value={investmentAmount}
+                      onChange={(e) => setInvestmentAmount(e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-50 focus:border-emerald-500 outline-none transition"
+                    />
+                    {investmentAmount && (
+                      <p className="text-sm text-slate-400 mt-2">
+                        Você receberá {calculateShares()} cota{calculateShares() !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Status Display */}
+                  {status && (
+                    <div className={`p-3 rounded-lg border text-sm ${
+                      statusType === "success"
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                        : statusType === "error"
+                        ? "bg-red-500/10 border-red-500/30 text-red-300"
+                        : "bg-sky-500/10 border-sky-500/30 text-sky-300"
+                    }`}>
+                      {status}
+                    </div>
+                  )}
+
+                  {connected ? (
+                    <button
+                      onClick={handleBuyShares}
+                      disabled={loading || !investmentAmount || parseFloat(investmentAmount) < business.sharesInfo.minInvestment}
+                      className="w-full py-4 bg-gradient-to-r from-emerald-500 to-sky-500 hover:from-emerald-600 hover:to-sky-600 rounded-xl text-white font-semibold transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {loading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>Investir Agora</>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="w-full py-4 bg-slate-800 rounded-xl text-center">
+                      <p className="text-slate-400 text-sm">Conecte sua carteira para investir</p>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-slate-500 text-center">
+                    Investimento mínimo: R$ {business.sharesInfo.minInvestment.toLocaleString('pt-BR')}
+                  </p>
+
+                  <div className="border-t border-slate-800 pt-4">
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
+                      <p className="text-xs text-amber-300 text-center">
+                        ⚠️ <strong>PROTÓTIPO EDUCACIONAL</strong><br/>
+                        Use apenas SOL de Devnet (testnet).<br/>
+                        Não invista valores reais!
+                      </p>
+                      <a
+                        href="https://faucet.solana.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block mt-2 text-center text-xs text-emerald-400 hover:underline"
+                      >
+                        → Pegar SOL de teste grátis
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
