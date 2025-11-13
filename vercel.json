@@ -1,9 +1,16 @@
 {
-  "buildCommand": "cd frontend && yarn build",
-  "outputDirectory": "frontend/.next",
-  "installCommand": "cd frontend && yarn install",
-  "devCommand": "cd frontend && yarn dev",
-  "framework": "nextjs",
-  "regions": ["iad1"]
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/$1"
+    }
+  ]
 }
 
