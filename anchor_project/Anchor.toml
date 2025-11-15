@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-my_program = "8sTHpKZ2jbTNBzCxmwFytcift1j6J2Nfj1s9WHGSoE5Y"
+my_program = "4GDViZnuhjZWzpsmdMqe6FXJimfGgdZaHQegsYDjNBZs"
 
 [programs.devnet]
 my_program = "8sTHpKZ2jbTNBzCxmwFytcift1j6J2Nfj1s9WHGSoE5Y"

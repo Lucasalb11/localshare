@@ -10,9 +10,9 @@ export function Navbar() {
   const { connected } = useWallet();
 
   const navItems = [
-    { href: "/", label: "Início" },
-    { href: "/marketplace", label: "Explorar Negócios" },
-    ...(connected ? [{ href: "/dashboard", label: "Meu Painel" }] : []),
+    { href: "/", label: "Home" },
+    { href: "/marketplace", label: "Explore Businesses" },
+    ...(connected ? [{ href: "/dashboard", label: "My Dashboard" }] : []),
   ];
 
   return (
@@ -24,7 +24,7 @@ export function Navbar() {
             <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-sky-500 rounded-xl group-hover:scale-110 transition-transform" />
             <div className="flex flex-col">
               <span className="font-bold text-lg text-slate-50">Localshare</span>
-              <span className="text-xs text-slate-400 -mt-1">Invista Local</span>
+              <span className="text-xs text-slate-400 -mt-1">Invest Local</span>
             </div>
           </Link>
 

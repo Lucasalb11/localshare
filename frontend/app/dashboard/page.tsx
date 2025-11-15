@@ -158,14 +158,14 @@ export default function DashboardPage() {
         <div className="text-center max-w-md">
           <Store className="w-20 h-20 text-emerald-400 mx-auto mb-6" />
           <h1 className="text-3xl font-bold text-slate-50 mb-4">
-            Conecte sua Carteira
+            Connect Your Wallet
           </h1>
           <p className="text-slate-400 mb-8">
-            Para cadastrar seu negócio e começar a captar investimentos, 
-            você precisa conectar sua carteira digital.
+            To register your business and start raising funds, 
+            you need to connect your digital wallet.
           </p>
           <button className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-sky-500 hover:from-emerald-600 hover:to-sky-600 rounded-xl text-white font-semibold transition-all">
-            Clique no botão no canto superior direito
+            Click the button in the top right corner
           </button>
         </div>
       </div>
@@ -178,10 +178,10 @@ export default function DashboardPage() {
         {/* Header */}
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-slate-50 mb-4">
-            Cadastre Seu Negócio
+            Register Your Business
           </h1>
           <p className="text-lg text-slate-400">
-            Preencha as informações para começar a captar investimentos para seu negócio.
+            Fill in the information to start raising investments for your business.
           </p>
         </div>
 
@@ -189,9 +189,9 @@ export default function DashboardPage() {
         <div className="mb-12">
           <div className="flex items-center justify-between">
             {[
-              { num: 1, label: "Informações Básicas" },
-              { num: 2, label: "Dados Financeiros" },
-              { num: 3, label: "Oferta de Investimento" },
+              { num: 1, label: "Basic Information" },
+              { num: 2, label: "Financial Data" },
+              { num: 3, label: "Investment Offering" },
             ].map((s, index) => (
               <div key={s.num} className="flex items-center flex-1">
                 <div className="flex items-center">
@@ -229,16 +229,16 @@ export default function DashboardPage() {
           {step === 1 && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-slate-50 mb-6">
-                Informações Básicas
+                Basic Information
               </h2>
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Nome do Negócio *
+                  Business Name *
                 </label>
                 <input
                   type="text"
-                  placeholder="Ex: Padaria São Pedro"
+                  placeholder="E.g., São Pedro Bakery"
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-50 placeholder-slate-500 focus:border-emerald-500 outline-none transition"
@@ -247,28 +247,28 @@ export default function DashboardPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Categoria *
+                  Category *
                 </label>
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-50 focus:border-emerald-500 outline-none transition"
                 >
-                  <option value="">Selecione uma categoria</option>
-                  <option value="Alimentação">Alimentação</option>
-                  <option value="Serviços Automotivos">Serviços Automotivos</option>
-                  <option value="Saúde e Bem-estar">Saúde e Bem-estar</option>
-                  <option value="Comércio">Comércio</option>
-                  <option value="Serviços">Serviços</option>
+                  <option value="">Select a category</option>
+                  <option value="Food">Food</option>
+                  <option value="Automotive Services">Automotive Services</option>
+                  <option value="Health and Wellness">Health and Wellness</option>
+                  <option value="Commerce">Commerce</option>
+                  <option value="Services">Services</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Descrição do Negócio *
+                  Business Description *
                 </label>
                 <textarea
-                  placeholder="Conte sobre seu negócio, o que você faz, diferenciais, história..."
+                  placeholder="Tell us about your business, what you do, differentiators, history..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={6}
@@ -279,11 +279,11 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Anos em Atividade *
+                    Years in Business *
                   </label>
                   <input
                     type="number"
-                    placeholder="Ex: 5"
+                    placeholder="E.g., 5"
                     value={yearsInBusiness}
                     onChange={(e) => setYearsInBusiness(e.target.value)}
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-50 placeholder-slate-500 focus:border-emerald-500 outline-none transition"
@@ -292,11 +292,11 @@ export default function DashboardPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Número de Funcionários *
+                    Number of Employees *
                   </label>
                   <input
                     type="number"
-                    placeholder="Ex: 8"
+                    placeholder="E.g., 8"
                     value={employees}
                     onChange={(e) => setEmployees(e.target.value)}
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-50 placeholder-slate-500 focus:border-emerald-500 outline-none transition"
@@ -306,11 +306,11 @@ export default function DashboardPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Endereço Completo *
+                  Full Address *
                 </label>
                 <input
                   type="text"
-                  placeholder="Ex: Rua das Flores, 123"
+                  placeholder="E.g., 123 Main Street"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-50 placeholder-slate-500 focus:border-emerald-500 outline-none transition"
@@ -320,11 +320,11 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Cidade *
+                    City *
                   </label>
                   <input
                     type="text"
-                    placeholder="Ex: São Paulo"
+                    placeholder="E.g., São Paulo"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-50 placeholder-slate-500 focus:border-emerald-500 outline-none transition"
@@ -333,11 +333,11 @@ export default function DashboardPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Estado *
+                    State *
                   </label>
                   <input
                     type="text"
-                    placeholder="Ex: SP"
+                    placeholder="E.g., SP"
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                     maxLength={2}
@@ -351,7 +351,7 @@ export default function DashboardPage() {
           {step === 2 && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-slate-50 mb-6">
-                Dados Financeiros
+                Financial Data
               </h2>
 
               <div className="bg-sky-500/10 border border-sky-500/30 rounded-xl p-4 mb-6">
@@ -359,11 +359,11 @@ export default function DashboardPage() {
                   <FileText className="w-5 h-5 text-sky-400 flex-shrink-0 mt-1" />
                   <div>
                     <p className="text-sm text-sky-200 font-medium mb-1">
-                      Por que precisamos dessas informações?
+                      Why do we need this information?
                     </p>
                     <p className="text-xs text-sky-200/80">
-                      Esses dados são usados pela nossa IA para avaliar a saúde financeira do seu negócio 
-                      e fornecer uma pontuação de confiança para os investidores.
+                      This data is used by our AI to evaluate your business's financial health 
+                      and provide a confidence score to investors.
                     </p>
                   </div>
                 </div>
@@ -371,63 +371,63 @@ export default function DashboardPage() {
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Faturamento Mensal Médio (R$) *
+                  Average Monthly Revenue ($) *
                 </label>
                 <div className="relative">
                   <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
                     type="number"
-                    placeholder="Ex: 85000"
+                    placeholder="E.g., 85000"
                     value={monthlyRevenue}
                     onChange={(e) => setMonthlyRevenue(e.target.value)}
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-12 pr-4 py-3 text-slate-50 placeholder-slate-500 focus:border-emerald-500 outline-none transition"
                   />
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  Média dos últimos 6 meses
+                  Average of the last 6 months
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Custos Mensais Médios (R$) *
+                  Average Monthly Costs ($) *
                 </label>
                 <div className="relative">
                   <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
                     type="number"
-                    placeholder="Ex: 52000"
+                    placeholder="E.g., 52000"
                     value={monthlyCosts}
                     onChange={(e) => setMonthlyCosts(e.target.value)}
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-12 pr-4 py-3 text-slate-50 placeholder-slate-500 focus:border-emerald-500 outline-none transition"
                   />
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  Incluindo salários, aluguel, fornecedores, etc.
+                  Including salaries, rent, suppliers, etc.
                 </p>
               </div>
 
               {monthlyRevenue && monthlyCosts && (
                 <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
-                  <p className="text-sm text-emerald-300 mb-2">Lucro Líquido Estimado</p>
+                  <p className="text-sm text-emerald-300 mb-2">Estimated Net Profit</p>
                   <p className="text-3xl font-bold text-emerald-400">
-                    R$ {(parseFloat(monthlyRevenue) - parseFloat(monthlyCosts)).toLocaleString('pt-BR')}
-                    <span className="text-lg text-emerald-300/80">/mês</span>
+                    ${(parseFloat(monthlyRevenue) - parseFloat(monthlyCosts)).toLocaleString('en-US')}
+                    <span className="text-lg text-emerald-300/80">/month</span>
                   </p>
                 </div>
               )}
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Documentos (opcional)
+                  Documents (optional)
                 </label>
                 <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-emerald-500/50 transition cursor-pointer">
                   <Upload className="w-10 h-10 text-slate-400 mx-auto mb-3" />
                   <p className="text-sm text-slate-300 mb-1">
-                    Arraste arquivos ou clique para fazer upload
+                    Drag files or click to upload
                   </p>
                   <p className="text-xs text-slate-500">
-                    Balanços, contratos, relatórios (PDF, até 10MB)
+                    Balance sheets, contracts, reports (PDF, up to 10MB)
                   </p>
                 </div>
               </div>
@@ -437,34 +437,34 @@ export default function DashboardPage() {
           {step === 3 && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-slate-50 mb-6">
-                Configurar Oferta de Investimento
+                Configure Investment Offering
               </h2>
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Quantas cotas deseja oferecer? *
+                  How many shares do you want to offer? *
                 </label>
                 <input
                   type="number"
-                  placeholder="Ex: 1000"
+                  placeholder="E.g., 1000"
                   value={totalShares}
                   onChange={(e) => setTotalShares(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-50 placeholder-slate-500 focus:border-emerald-500 outline-none transition"
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  Você pode manter cotas para si. Quanto mais cotas, menor o valor individual.
+                  You can keep shares for yourself. More shares means lower individual value.
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Preço por cota (R$) *
+                  Price per share ($) *
                 </label>
                 <div className="relative">
                   <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
                     type="number"
-                    placeholder="Ex: 850"
+                    placeholder="E.g., 850"
                     value={sharePrice}
                     onChange={(e) => setSharePrice(e.target.value)}
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-12 pr-4 py-3 text-slate-50 placeholder-slate-500 focus:border-emerald-500 outline-none transition"
@@ -476,17 +476,17 @@ export default function DashboardPage() {
                 <div className="bg-violet-500/10 border border-violet-500/30 rounded-xl p-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-violet-300 mb-1">Valor Total da Oferta</p>
+                      <p className="text-sm text-violet-300 mb-1">Total Offering Value</p>
                       <p className="text-2xl font-bold text-violet-400">
-                        R$ {(parseFloat(totalShares) * parseFloat(sharePrice)).toLocaleString('pt-BR')}
+                        ${(parseFloat(totalShares) * parseFloat(sharePrice)).toLocaleString('en-US')}
                       </p>
                     </div>
                     <div>
-                      <p className="text-sm text-violet-300 mb-1">Investimento Mínimo</p>
+                      <p className="text-sm text-violet-300 mb-1">Minimum Investment</p>
                       <p className="text-2xl font-bold text-violet-400">
-                        R$ {(parseFloat(sharePrice) * 5).toLocaleString('pt-BR')}
+                        ${(parseFloat(sharePrice) * 5).toLocaleString('en-US')}
                       </p>
-                      <p className="text-xs text-violet-300/70 mt-1">5 cotas mínimas</p>
+                      <p className="text-xs text-violet-300/70 mt-1">5 shares minimum</p>
                     </div>
                   </div>
                 </div>
@@ -497,11 +497,11 @@ export default function DashboardPage() {
                   <TrendingUp className="w-5 h-5 text-amber-400 flex-shrink-0 mt-1" />
                   <div>
                     <p className="text-sm text-amber-200 font-medium mb-1">
-                      Próximos passos
+                      Next steps
                     </p>
                     <p className="text-xs text-amber-200/80">
-                      Após o cadastro, nossa equipe irá revisar as informações e entrar em contato 
-                      em até 48h para validar os documentos e ativar sua oferta.
+                      After registration, our team will review the information and contact you 
+                      within 48 hours to validate documents and activate your offering.
                     </p>
                   </div>
                 </div>
@@ -545,7 +545,7 @@ export default function DashboardPage() {
                 disabled={loading}
                 className="px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-50 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Voltar
+                Back
               </button>
             )}
             
@@ -555,7 +555,7 @@ export default function DashboardPage() {
                 disabled={loading}
                 className="ml-auto px-8 py-3 bg-gradient-to-r from-emerald-500 to-sky-500 hover:from-emerald-600 hover:to-sky-600 rounded-lg text-white font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Próximo
+                Next
               </button>
             )}
 
@@ -568,10 +568,10 @@ export default function DashboardPage() {
                 {loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Registrando...
+                    Registering...
                   </>
                 ) : (
-                  <>Registrar no Blockchain</>
+                  <>Register on Blockchain</>
                 )}
               </button>
             )}
@@ -585,10 +585,10 @@ export default function DashboardPage() {
                 {loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Criando Oferta...
+                    Creating Offering...
                   </>
                 ) : (
-                  <>Criar Oferta no Blockchain</>
+                  <>Create Offering on Blockchain</>
                 )}
               </button>
             )}
@@ -598,4 +598,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

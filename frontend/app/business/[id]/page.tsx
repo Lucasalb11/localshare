@@ -42,9 +42,9 @@ export default function BusinessDetailPage({ params }: PageProps) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-slate-50 mb-2">Negócio não encontrado</h1>
+          <h1 className="text-2xl font-bold text-slate-50 mb-2">Business not found</h1>
           <Link href="/marketplace" className="text-emerald-400 hover:underline">
-            Voltar ao marketplace
+            Back to marketplace
           </Link>
         </div>
       </div>
@@ -126,7 +126,7 @@ export default function BusinessDetailPage({ params }: PageProps) {
             className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-50 transition-colors"
           >
             <ChevronLeft className="w-5 h-5" />
-            Voltar ao marketplace
+            Back to marketplace
           </Link>
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function BusinessDetailPage({ params }: PageProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5" />
-                    <span>{business.metrics.yearsInBusiness} anos no mercado</span>
+                    <span>{business.metrics.yearsInBusiness} years in business</span>
                   </div>
                 </div>
               </div>
@@ -169,7 +169,7 @@ export default function BusinessDetailPage({ params }: PageProps) {
                   <div className="px-6 py-3 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-sky-500/20 backdrop-blur-sm border border-emerald-500/30">
                     <div className="flex items-center gap-2 mb-1">
                       <Sparkles className="w-5 h-5 text-emerald-400" />
-                      <span className="text-sm text-slate-300">Score IA</span>
+                      <span className="text-sm text-slate-300">AI Score</span>
                     </div>
                     <div className="text-4xl font-bold text-slate-50">{business.aiAnalysis.score}<span className="text-2xl text-slate-400">/100</span></div>
                   </div>
@@ -187,9 +187,9 @@ export default function BusinessDetailPage({ params }: PageProps) {
             {/* Tabs */}
             <div className="flex gap-4 border-b border-slate-800">
               {[
-                { key: "overview", label: "Visão Geral" },
-                { key: "financials", label: "Financeiro" },
-                { key: "analysis", label: "Análise IA" },
+                { key: "overview", label: "Overview" },
+                { key: "financials", label: "Financials" },
+                { key: "analysis", label: "AI Analysis" },
               ].map((tab) => (
                 <button
                   key={tab.key}
@@ -209,7 +209,7 @@ export default function BusinessDetailPage({ params }: PageProps) {
             {selectedTab === "overview" && (
               <div className="space-y-6">
                 <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
-                  <h3 className="text-xl font-bold text-slate-50 mb-4">Sobre o Negócio</h3>
+                  <h3 className="text-xl font-bold text-slate-50 mb-4">About the Business</h3>
                   <p className="text-slate-300 whitespace-pre-line leading-relaxed">
                     {business.description}
                   </p>
@@ -219,17 +219,17 @@ export default function BusinessDetailPage({ params }: PageProps) {
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
                     <Users className="w-8 h-8 text-emerald-400 mb-3" />
                     <p className="text-3xl font-bold text-slate-50">{business.metrics.employees}</p>
-                    <p className="text-sm text-slate-400">Funcionários</p>
+                    <p className="text-sm text-slate-400">Employees</p>
                   </div>
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
                     <TrendingUp className="w-8 h-8 text-sky-400 mb-3" />
                     <p className="text-3xl font-bold text-slate-50">{business.metrics.monthlyCustomers.toLocaleString()}</p>
-                    <p className="text-sm text-slate-400">Clientes/mês</p>
+                    <p className="text-sm text-slate-400">Customers/month</p>
                   </div>
                 </div>
 
                 <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
-                  <h3 className="text-xl font-bold text-slate-50 mb-4">Proprietário</h3>
+                  <h3 className="text-xl font-bold text-slate-50 mb-4">Owner</h3>
                   <div className="flex items-center gap-4">
                     <img
                       src={business.owner.avatar}
@@ -249,25 +249,25 @@ export default function BusinessDetailPage({ params }: PageProps) {
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
-                    <p className="text-sm text-slate-400 mb-2">Receita Mensal</p>
+                    <p className="text-sm text-slate-400 mb-2">Monthly Revenue</p>
                     <p className="text-3xl font-bold text-emerald-400">
-                      R$ {business.financials.monthlyRevenue.toLocaleString('pt-BR')}
+                      ${business.financials.monthlyRevenue.toLocaleString('en-US')}
                     </p>
                   </div>
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
-                    <p className="text-sm text-slate-400 mb-2">Lucro Líquido</p>
+                    <p className="text-sm text-slate-400 mb-2">Net Profit</p>
                     <p className="text-3xl font-bold text-sky-400">
-                      R$ {business.financials.netProfit.toLocaleString('pt-BR')}
+                      ${business.financials.netProfit.toLocaleString('en-US')}
                     </p>
                   </div>
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
-                    <p className="text-sm text-slate-400 mb-2">Custos Mensais</p>
+                    <p className="text-sm text-slate-400 mb-2">Monthly Costs</p>
                     <p className="text-3xl font-bold text-slate-400">
-                      R$ {business.financials.monthlyCosts.toLocaleString('pt-BR')}
+                      ${business.financials.monthlyCosts.toLocaleString('en-US')}
                     </p>
                   </div>
                   <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
-                    <p className="text-sm text-slate-400 mb-2">Crescimento Anual</p>
+                    <p className="text-sm text-slate-400 mb-2">Yearly Growth</p>
                     <p className="text-3xl font-bold text-violet-400">
                       +{business.financials.yearlyGrowth}%
                     </p>
@@ -277,20 +277,20 @@ export default function BusinessDetailPage({ params }: PageProps) {
                 <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
                   <h3 className="text-xl font-bold text-slate-50 mb-4">Valuation</h3>
                   <p className="text-4xl font-bold text-slate-50 mb-2">
-                    R$ {business.financials.valuation.toLocaleString('pt-BR')}
+                    ${business.financials.valuation.toLocaleString('en-US')}
                   </p>
                   <p className="text-sm text-slate-400">
-                    Baseado em múltiplos de lucro e avaliação de mercado
+                    Based on profit multiples and market valuation
                   </p>
                 </div>
 
                 <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
-                  <h3 className="text-xl font-bold text-slate-50 mb-4">Documentos</h3>
+                  <h3 className="text-xl font-bold text-slate-50 mb-4">Documents</h3>
                   <div className="space-y-3">
                     {[
-                      { label: "Plano de Negócios", has: business.documents.hasBusinessPlan },
-                      { label: "Relatório Financeiro", has: business.documents.hasFinancialReport },
-                      { label: "Documentação Legal", has: business.documents.hasLegalDocs },
+                      { label: "Business Plan", has: business.documents.hasBusinessPlan },
+                      { label: "Financial Report", has: business.documents.hasFinancialReport },
+                      { label: "Legal Documentation", has: business.documents.hasLegalDocs },
                     ].map((doc) => (
                       <div key={doc.label} className="flex items-center justify-between">
                         <span className="text-slate-300">{doc.label}</span>
@@ -311,7 +311,7 @@ export default function BusinessDetailPage({ params }: PageProps) {
                 <div className="bg-gradient-to-br from-emerald-500/10 to-sky-500/10 border border-emerald-500/30 rounded-2xl p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <Sparkles className="w-6 h-6 text-emerald-400" />
-                    <h3 className="text-xl font-bold text-slate-50">Análise da Inteligência Artificial</h3>
+                    <h3 className="text-xl font-bold text-slate-50">Artificial Intelligence Analysis</h3>
                   </div>
                   <p className="text-slate-300 leading-relaxed">{business.aiAnalysis.recommendation}</p>
                 </div>
@@ -319,7 +319,7 @@ export default function BusinessDetailPage({ params }: PageProps) {
                 <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
                   <h3 className="text-lg font-bold text-slate-50 mb-4 flex items-center gap-2">
                     <Shield className="w-5 h-5 text-emerald-400" />
-                    Pontos Fortes
+                    Strengths
                   </h3>
                   <ul className="space-y-3">
                     {business.aiAnalysis.strengths.map((strength, index) => (
@@ -334,7 +334,7 @@ export default function BusinessDetailPage({ params }: PageProps) {
                 <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
                   <h3 className="text-lg font-bold text-slate-50 mb-4 flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5 text-amber-400" />
-                    Riscos Identificados
+                    Identified Risks
                   </h3>
                   <ul className="space-y-3">
                     {business.aiAnalysis.risks.map((risk, index) => (
@@ -353,18 +353,18 @@ export default function BusinessDetailPage({ params }: PageProps) {
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
               <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6">
-                <h3 className="text-xl font-bold text-slate-50 mb-6">Investir Agora</h3>
+                <h3 className="text-xl font-bold text-slate-50 mb-6">Invest Now</h3>
                 
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm text-slate-400 mb-2">Preço por cota</p>
+                    <p className="text-sm text-slate-400 mb-2">Price per share</p>
                     <p className="text-2xl font-bold text-slate-50">
-                      R$ {business.sharesInfo.pricePerShare.toLocaleString('pt-BR')}
+                      ${business.sharesInfo.pricePerShare.toLocaleString('en-US')}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-sm text-slate-400 mb-2">Cotas disponíveis</p>
+                    <p className="text-sm text-slate-400 mb-2">Available shares</p>
                     <p className="text-lg font-semibold text-slate-50">
                       {business.sharesInfo.availableShares}/{business.sharesInfo.totalShares}
                     </p>
@@ -380,18 +380,18 @@ export default function BusinessDetailPage({ params }: PageProps) {
 
                   <div className="border-t border-slate-800 pt-4">
                     <label className="block text-sm text-slate-400 mb-2">
-                      Valor do investimento (R$)
+                      Investment amount ($)
                     </label>
                     <input
                       type="number"
-                      placeholder={`Mínimo R$ ${business.sharesInfo.minInvestment}`}
+                      placeholder={`Minimum $${business.sharesInfo.minInvestment}`}
                       value={investmentAmount}
                       onChange={(e) => setInvestmentAmount(e.target.value)}
                       className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-50 focus:border-emerald-500 outline-none transition"
                     />
                     {investmentAmount && (
                       <p className="text-sm text-slate-400 mt-2">
-                        Você receberá {calculateShares()} cota{calculateShares() !== 1 ? 's' : ''}
+                        You will receive {calculateShares()} share{calculateShares() !== 1 ? 's' : ''}
                       </p>
                     )}
                   </div>
@@ -418,28 +418,28 @@ export default function BusinessDetailPage({ params }: PageProps) {
                       {loading ? (
                         <>
                           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Processando...
+                          Processing...
                         </>
                       ) : (
-                        <>Investir Agora</>
+                        <>Invest Now</>
                       )}
                     </button>
                   ) : (
                     <div className="w-full py-4 bg-slate-800 rounded-xl text-center">
-                      <p className="text-slate-400 text-sm">Conecte sua carteira para investir</p>
+                      <p className="text-slate-400 text-sm">Connect your wallet to invest</p>
                     </div>
                   )}
 
                   <p className="text-xs text-slate-500 text-center">
-                    Investimento mínimo: R$ {business.sharesInfo.minInvestment.toLocaleString('pt-BR')}
+                    Minimum investment: ${business.sharesInfo.minInvestment.toLocaleString('en-US')}
                   </p>
 
                   <div className="border-t border-slate-800 pt-4">
                     <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3">
                       <p className="text-xs text-amber-300 text-center">
-                        ⚠️ <strong>PROTÓTIPO EDUCACIONAL</strong><br/>
-                        Use apenas SOL de Devnet (testnet).<br/>
-                        Não invista valores reais!
+                        ⚠️ <strong>EDUCATIONAL PROTOTYPE</strong><br/>
+                        Use only Devnet SOL (testnet).<br/>
+                        Do not invest real funds!
                       </p>
                       <a
                         href="https://faucet.solana.com/"
@@ -447,7 +447,7 @@ export default function BusinessDetailPage({ params }: PageProps) {
                         rel="noopener noreferrer"
                         className="block mt-2 text-center text-xs text-emerald-400 hover:underline"
                       >
-                        → Pegar SOL de teste grátis
+                        → Get free test SOL
                       </a>
                     </div>
                   </div>
@@ -460,4 +460,3 @@ export default function BusinessDetailPage({ params }: PageProps) {
     </div>
   );
 }
-

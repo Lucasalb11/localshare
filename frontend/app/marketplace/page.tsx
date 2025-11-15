@@ -6,11 +6,11 @@ import { mockBusinesses } from "../data/mockBusinesses";
 import { MapPin, TrendingUp, Users, Star } from "lucide-react";
 
 export default function MarketplacePage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>("Todos");
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
   
-  const categories = ["Todos", "Alimentação", "Serviços Automotivos", "Saúde e Bem-estar"];
+  const categories = ["All", "Food", "Automotive Services", "Health and Wellness"];
   
-  const filteredBusinesses = selectedCategory === "Todos"
+  const filteredBusinesses = selectedCategory === "All"
     ? mockBusinesses
     : mockBusinesses.filter(b => b.category === selectedCategory);
 
@@ -20,11 +20,11 @@ export default function MarketplacePage() {
       <div className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <h1 className="text-4xl font-bold text-slate-50 mb-4">
-            Explore Negócios
+            Explore Businesses
           </h1>
           <p className="text-lg text-slate-400 max-w-3xl">
-            Descubra oportunidades de investimento em negócios locais verificados. 
-            Cada negócio passa por análise rigorosa da nossa IA.
+            Discover investment opportunities in verified local businesses. 
+            Each business undergoes rigorous analysis by our AI.
           </p>
         </div>
       </div>
@@ -102,16 +102,16 @@ export default function MarketplacePage() {
                 {/* Metrics */}
                 <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-800">
                   <div>
-                    <p className="text-xs text-slate-500 mb-1">Retorno/ano</p>
+                    <p className="text-xs text-slate-500 mb-1">Return/year</p>
                     <div className="flex items-center gap-1 text-emerald-400 font-semibold">
                       <TrendingUp className="w-4 h-4" />
                       <span>{business.financials.yearlyGrowth.toFixed(1)}%</span>
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500 mb-1">Avaliação</p>
+                    <p className="text-xs text-slate-500 mb-1">Valuation</p>
                     <p className="text-slate-50 font-semibold">
-                      R$ {(business.financials.valuation / 1000).toFixed(0)}k
+                      ${(business.financials.valuation / 1000).toFixed(0)}k
                     </p>
                   </div>
                   <div>
@@ -126,7 +126,7 @@ export default function MarketplacePage() {
                 {/* Investment Info */}
                 <div className="pt-4 border-t border-slate-800">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-slate-400">Cotas disponíveis</span>
+                    <span className="text-sm text-slate-400">Available shares</span>
                     <span className="text-sm font-semibold text-slate-50">
                       {business.sharesInfo.availableShares}/{business.sharesInfo.totalShares}
                     </span>
@@ -140,7 +140,7 @@ export default function MarketplacePage() {
                     />
                   </div>
                   <p className="text-xs text-slate-500 mt-2">
-                    A partir de R$ {business.sharesInfo.minInvestment.toLocaleString('pt-BR')}
+                    From ${business.sharesInfo.minInvestment.toLocaleString('en-US')}
                   </p>
                 </div>
               </div>
@@ -151,7 +151,7 @@ export default function MarketplacePage() {
         {filteredBusinesses.length === 0 && (
           <div className="text-center py-24">
             <p className="text-slate-400 text-lg">
-              Nenhum negócio encontrado nesta categoria.
+              No businesses found in this category.
             </p>
           </div>
         )}
@@ -159,4 +159,3 @@ export default function MarketplacePage() {
     </div>
   );
 }
-

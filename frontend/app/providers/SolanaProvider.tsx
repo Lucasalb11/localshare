@@ -7,10 +7,10 @@ import {
 } from "@solana/wallet-adapter-react";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import { PhantomWalletAdapter } from "@solana/wallet-adapter-wallets";
+import { PhantomWalletAdapter, SolflareWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { clusterApiUrl } from "@solana/web3.js";
 
-// Importa estilos do wallet adapter
+// Import wallet adapter styles
 import "@solana/wallet-adapter-react-ui/styles.css";
 
 interface SolanaProviderProps {
@@ -18,21 +18,48 @@ interface SolanaProviderProps {
 }
 
 /**
- * Provider principal do Solana que configura a conexão e os wallets
- * Usa Devnet por padrão
+ * Main Solana Provider that configures connection and wallets
+ * Supports Localnet, Devnet and Mainnet
+ * 
+ * Environment Variables:
+ * - NEXT_PUBLIC_SOLANA_NETWORK: Network selection (default: devnet)
+ * - NEXT_PUBLIC_SOLANA_RPC_ENDPOINT: Custom RPC endpoint (optional)
+ * 
+ * For production, it's recommended to use a dedicated RPC provider
+ * like Helius, QuickNode, or Alchemy for better performance and reliability
  */
 export const SolanaProvider: FC<SolanaProviderProps> = ({ children }) => {
-  // Define a rede como Devnet
-  const network = WalletAdapterNetwork.Devnet;
+  // Detect network via environment variable (default: devnet)
+  const networkEnv = process.env.NEXT_PUBLIC_SOLANA_NETWORK || "devnet";
+  
+  // RPC Endpoint configuration
+  const endpoint = useMemo(() => {
+    // If custom RPC endpoint is provided, use it
+    const customEndpoint = process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT;
+    if (customEndpoint) {
+      return customEndpoint;
+    }
+    
+    // For localnet, use custom endpoint
+    if (networkEnv === "localnet") {
+      return "http://127.0.0.1:8899";
+    }
+    
+    // For devnet/mainnet, use public clusterApiUrl
+    // Note: For production with high traffic, consider using a dedicated RPC provider
+    const network = networkEnv === "mainnet" 
+      ? WalletAdapterNetwork.Mainnet 
+      : WalletAdapterNetwork.Devnet;
+    
+    return clusterApiUrl(network);
+  }, [networkEnv]);
 
-  // Endpoint da RPC (pode ser customizado para usar RPC privado)
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
-
-  // Lista de wallets suportados
+  // List of supported wallets
   const wallets = useMemo(
     () => [
       new PhantomWalletAdapter(),
-      // Adicione outros wallets aqui se necessário
+      new SolflareWalletAdapter(),
+      // Add more wallets here if needed
     ],
     []
   );
@@ -45,4 +72,3 @@ export const SolanaProvider: FC<SolanaProviderProps> = ({ children }) => {
     </ConnectionProvider>
   );
 };
-

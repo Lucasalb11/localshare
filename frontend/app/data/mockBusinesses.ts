@@ -3,18 +3,18 @@ import { BusinessData } from "../types/business";
 export const mockBusinesses: BusinessData[] = [
   {
     id: "padaria-sao-pedro",
-    name: "Padaria São Pedro",
-    category: "Alimentação",
-    description: `A Padaria São Pedro é um estabelecimento tradicional no bairro de Pinheiros, São Paulo, 
-    com mais de 15 anos de história. Especializada em pães artesanais e produtos de confeitaria, 
-    atende diariamente mais de 500 clientes. O negócio possui uma clientela fiel e está em processo 
-    de expansão com planos de abrir uma segunda unidade.
+    name: "São Pedro Bakery",
+    category: "Food",
+    description: `São Pedro Bakery is a traditional establishment in the Pinheiros neighborhood, São Paulo, 
+    with over 15 years of history. Specializing in artisan breads and confectionery products, 
+    we serve more than 500 customers daily. The business has a loyal customer base and is in the process 
+    of expansion with plans to open a second location.
     
-    Nossos produtos são 100% artesanais, feitos diariamente com ingredientes selecionados. 
-    Contamos com uma equipe de padeiros experientes e um ambiente acolhedor que é referência no bairro.
+    Our products are 100% artisanal, made daily with selected ingredients. 
+    We have a team of experienced bakers and a welcoming environment that is a reference in the neighborhood.
     
-    Buscamos investidores para expandir nossa operação e abrir mais 2 unidades nos próximos 18 meses.`,
-    shortDescription: "Padaria artesanal tradicional em Pinheiros com planos de expansão",
+    We are seeking investors to expand our operation and open 2 more locations in the next 18 months.`,
+    shortDescription: "Traditional artisan bakery in Pinheiros with expansion plans",
     location: {
       city: "São Paulo",
       state: "SP",
@@ -28,7 +28,7 @@ export const mockBusinesses: BusinessData[] = [
     logo: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200",
     owner: {
       name: "Pedro Silva Santos",
-      role: "Fundador e Padeiro-Mestre",
+      role: "Founder and Master Baker",
       avatar: "https://i.pravatar.cc/150?img=12",
     },
     financials: {
@@ -58,33 +58,32 @@ export const mockBusinesses: BusinessData[] = [
     aiAnalysis: {
       score: 87,
       strengths: [
-        "Localização privilegiada em área nobre de São Paulo",
-        "Clientela fiel com ticket médio crescente",
-        "Marca consolidada há 15 anos no bairro",
-        "Margem de lucro saudável (38%)",
-        "Plano de expansão bem estruturado",
+        "Prime location in upscale area of São Paulo",
+        "Loyal customer base with increasing average ticket",
+        "Established brand for 15 years in the neighborhood",
+        "Healthy profit margin (38%)",
+        "Well-structured expansion plan",
       ],
       risks: [
-        "Dependência de mão de obra especializada",
-        "Concorrência crescente no segmento artesanal",
-        "Sazonalidade em períodos de férias",
+        "Dependency on specialized labor",
+        "Growing competition in the artisan segment",
+        "Seasonality during holiday periods",
       ],
-      recommendation: "Investimento recomendado. Negócio consolidado com boa perspectiva de crescimento.",
+      recommendation: "Recommended investment. Established business with good growth prospects.",
     },
   },
   {
     id: "cafeteria-aroma",
-    name: "Cafeteria Aroma",
-    category: "Alimentação",
-    description: `A Cafeteria Aroma é uma cafeteria especializada em cafés especiais, localizada no coração 
-    de Vila Madalena. Trabalhamos com grãos selecionados de pequenos produtores brasileiros e oferecemos 
-    uma experiência única aos amantes de café.
+    name: "Aroma Coffee Shop",
+    category: "Food",
+    description: `Aroma Coffee Shop is a specialty coffee shop located in the heart of Vila Madalena. 
+    We work with selected beans from small Brazilian producers and offer a unique experience to coffee lovers.
     
-    Nossa proposta vai além do café: criamos um espaço de convivência e coworking, atraindo freelancers, 
-    estudantes e profissionais da região. Também oferecemos workshops mensais sobre métodos de preparo.
+    Our proposition goes beyond coffee: we create a gathering and coworking space, attracting freelancers, 
+    students and professionals from the region. We also offer monthly workshops on brewing methods.
     
-    Buscamos investimento para ampliar o espaço e adicionar uma mini-torrefação própria.`,
-    shortDescription: "Cafeteria especializada em cafés especiais e espaço de coworking",
+    We are seeking investment to expand the space and add our own mini-roastery.`,
+    shortDescription: "Specialty coffee shop and coworking space",
     location: {
       city: "São Paulo",
       state: "SP",
@@ -98,7 +97,7 @@ export const mockBusinesses: BusinessData[] = [
     logo: "https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=200",
     owner: {
       name: "Ana Carolina Mendes",
-      role: "Barista e Empreendedora",
+      role: "Barista and Entrepreneur",
       avatar: "https://i.pravatar.cc/150?img=5",
     },
     financials: {
@@ -128,34 +127,34 @@ export const mockBusinesses: BusinessData[] = [
     aiAnalysis: {
       score: 82,
       strengths: [
-        "Crescimento acelerado (32% ao ano)",
-        "Diferenciação com cafés especiais e coworking",
-        "Localização estratégica em bairro boêmio",
-        "Comunidade engajada de clientes regulares",
-        "Modelo de receita diversificado",
+        "Accelerated growth (32% per year)",
+        "Differentiation with specialty coffee and coworking",
+        "Strategic location in bohemian neighborhood",
+        "Engaged community of regular customers",
+        "Diversified revenue model",
       ],
       risks: [
-        "Negócio relativamente novo (3 anos)",
-        "Alta dependência da fundadora",
-        "Investimento necessário para escalabilidade",
+        "Relatively new business (3 years)",
+        "High dependency on founder",
+        "Investment needed for scalability",
       ],
-      recommendation: "Investimento com bom potencial. Risco moderado compensado pelo crescimento acelerado.",
+      recommendation: "Investment with good potential. Moderate risk offset by accelerated growth.",
     },
   },
   {
     id: "oficina-mecanica-moderna",
-    name: "Oficina Mecânica Moderna",
-    category: "Serviços Automotivos",
-    description: `A Oficina Mecânica Moderna atua há 20 anos no mercado automotivo, especializada em 
-    manutenção preventiva e corretiva de veículos nacionais e importados. Possuímos equipamentos de 
-    última geração e uma equipe altamente qualificada.
+    name: "Modern Auto Repair Shop",
+    category: "Automotive Services",
+    description: `Modern Auto Repair Shop has been operating for 20 years in the automotive market, specializing in 
+    preventive and corrective maintenance of national and imported vehicles. We have state-of-the-art equipment 
+    and a highly qualified team.
     
-    Atendemos tanto clientes pessoa física quanto frotas empresariais. Temos contratos fixos com 
-    3 empresas de logística da região, garantindo um fluxo constante de receita.
+    We serve both individual customers and corporate fleets. We have fixed contracts with 3 logistics 
+    companies in the region, ensuring a constant flow of revenue.
     
-    Buscamos investimento para modernizar ainda mais nossa estrutura e criar um serviço de 
-    manutenção móvel (officina que vai até o cliente).`,
-    shortDescription: "Oficina mecânica tradicional com 20 anos de experiência e contratos B2B",
+    We are seeking investment to further modernize our structure and create a mobile maintenance service 
+    (shop that goes to the customer).`,
+    shortDescription: "Traditional repair shop with 20 years of experience and B2B contracts",
     location: {
       city: "São Paulo",
       state: "SP",
@@ -169,7 +168,7 @@ export const mockBusinesses: BusinessData[] = [
     logo: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200",
     owner: {
       name: "Roberto Carlos Almeida",
-      role: "Mecânico e Proprietário",
+      role: "Mechanic and Owner",
       avatar: "https://i.pravatar.cc/150?img=33",
     },
     financials: {
@@ -199,33 +198,33 @@ export const mockBusinesses: BusinessData[] = [
     aiAnalysis: {
       score: 85,
       strengths: [
-        "Longo histórico de operação (20 anos)",
-        "Receita recorrente com contratos B2B",
-        "Baixa inadimplência e boa margem",
-        "Equipe estável e qualificada",
-        "Reputação sólida no mercado",
+        "Long operating history (20 years)",
+        "Recurring revenue with B2B contracts",
+        "Low default rate and good margin",
+        "Stable and qualified team",
+        "Solid reputation in the market",
       ],
       risks: [
-        "Crescimento moderado",
-        "Dependência de contratos empresariais",
-        "Necessidade de atualização tecnológica constante",
+        "Moderate growth",
+        "Dependency on corporate contracts",
+        "Need for constant technological updates",
       ],
-      recommendation: "Investimento seguro e estável. Ideal para perfil conservador com foco em dividendos.",
+      recommendation: "Safe and stable investment. Ideal for conservative profile focused on dividends.",
     },
   },
   {
     id: "restaurante-sabor-nordestino",
-    name: "Sabor Nordestino",
-    category: "Alimentação",
-    description: `O Sabor Nordestino é um restaurante especializado em culinária típica do Nordeste brasileiro, 
-    com foco em pratos da Bahia e Pernambuco. Localizado na região da Liberdade, atende tanto no 
-    salão quanto por delivery.
+    name: "Northeastern Flavor Restaurant",
+    category: "Food",
+    description: `Northeastern Flavor is a restaurant specializing in typical cuisine from Northeast Brazil, 
+    focusing on dishes from Bahia and Pernambuco. Located in the Liberdade region, we serve both 
+    in the dining room and by delivery.
     
-    Nossos pratos são preparados com receitas tradicionais, ingredientes autênticos trazidos 
-    diretamente do Nordeste. Nos finais de semana, oferecemos música ao vivo com forró e MPB.
+    Our dishes are prepared with traditional recipes, authentic ingredients brought directly from the Northeast. 
+    On weekends, we offer live music with forró and MPB.
     
-    Buscamos investimento para ampliar a cozinha e aumentar a capacidade de atendimento.`,
-    shortDescription: "Restaurante de comida nordestina com música ao vivo",
+    We are seeking investment to expand the kitchen and increase service capacity.`,
+    shortDescription: "Northeastern food restaurant with live music",
     location: {
       city: "São Paulo",
       state: "SP",
@@ -239,7 +238,7 @@ export const mockBusinesses: BusinessData[] = [
     logo: "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=200",
     owner: {
       name: "Maria José da Silva",
-      role: "Chef e Proprietária",
+      role: "Chef and Owner",
       avatar: "https://i.pravatar.cc/150?img=9",
     },
     financials: {
@@ -269,33 +268,32 @@ export const mockBusinesses: BusinessData[] = [
     aiAnalysis: {
       score: 78,
       strengths: [
-        "Culinária diferenciada com baixa concorrência direta",
-        "Forte crescimento ano a ano (25%)",
-        "Eventos culturais atraem público fiel",
-        "Diversificação com delivery",
-        "Chef proprietária com expertise reconhecida",
+        "Differentiated cuisine with low direct competition",
+        "Strong year-over-year growth (25%)",
+        "Cultural events attract loyal audience",
+        "Diversification with delivery",
+        "Owner chef with recognized expertise",
       ],
       risks: [
-        "Margem de lucro apertada (33%)",
-        "Alta rotatividade no setor de restaurantes",
-        "Dependência de poucos fornecedores específicos",
+        "Tight profit margin (33%)",
+        "High turnover in restaurant sector",
+        "Dependency on few specific suppliers",
       ],
-      recommendation: "Investimento interessante para quem busca apoiar negócios culturais com crescimento.",
+      recommendation: "Interesting investment for those seeking to support cultural businesses with growth.",
     },
   },
   {
     id: "academia-fit-zone",
-    name: "Academia Fit Zone",
-    category: "Saúde e Bem-estar",
-    description: `A Academia Fit Zone é uma academia de médio porte com foco em treinamento funcional, 
-    musculação e aulas coletivas. Possui 450 alunos ativos e uma equipe de 8 personal trainers.
+    name: "Fit Zone Gym",
+    category: "Health and Wellness",
+    description: `Fit Zone Gym is a mid-sized gym focusing on functional training, 
+    weight training and group classes. We have 450 active members and a team of 8 personal trainers.
     
-    Nossa diferenciação está no atendimento personalizado e na criação de programas de treino 
-    individualizados. Oferecemos também acompanhamento nutricional incluso nas mensalidades premium.
+    Our differentiation is in personalized service and creation of individualized training programs. 
+    We also offer nutritional monitoring included in premium memberships.
     
-    Buscamos investimento para adicionar uma área de fisioterapia e expandir para modalidades 
-    como pilates e yoga.`,
-    shortDescription: "Academia moderna com foco em treinos personalizados",
+    We are seeking investment to add a physiotherapy area and expand to modalities like pilates and yoga.`,
+    shortDescription: "Modern gym focusing on personalized training",
     location: {
       city: "São Paulo",
       state: "SP",
@@ -309,7 +307,7 @@ export const mockBusinesses: BusinessData[] = [
     logo: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=200",
     owner: {
       name: "Carlos Eduardo Fitness",
-      role: "Personal Trainer e Gestor",
+      role: "Personal Trainer and Manager",
       avatar: "https://i.pravatar.cc/150?img=15",
     },
     financials: {
@@ -339,19 +337,18 @@ export const mockBusinesses: BusinessData[] = [
     aiAnalysis: {
       score: 80,
       strengths: [
-        "Localização premium na Av. Paulista",
-        "Modelo de receita recorrente (mensalidades)",
-        "Baixa inadimplência (5%)",
-        "Crescimento consistente",
-        "Equipe qualificada e engajada",
+        "Premium location on Av. Paulista",
+        "Recurring revenue model (memberships)",
+        "Low default rate (5%)",
+        "Consistent growth",
+        "Qualified and engaged team",
       ],
       risks: [
-        "Alta concorrência na região",
-        "Sazonalidade (picos em jan/fev)",
-        "Necessidade de renovação de equipamentos",
+        "High competition in the region",
+        "Seasonality (peaks in Jan/Feb)",
+        "Need for equipment renewal",
       ],
-      recommendation: "Investimento sólido. Setor de saúde e bem-estar em expansão pós-pandemia.",
+      recommendation: "Solid investment. Health and wellness sector expanding post-pandemic.",
     },
   },
 ];
-

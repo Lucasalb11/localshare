@@ -60,13 +60,44 @@ yarn dev
 
 Access: **http://localhost:3000**
 
-### 3. Smart Contract (Optional)
+### 3. Smart Contract
 
+#### Option A: Devnet (Recommended - Currently Configured)
+
+The project is now configured to run on Solana Devnet.
+
+```bash
+# Make sure you have SOL on Devnet
+solana airdrop 2 --url devnet
+
+# Build and deploy
+cd anchor_project
+anchor build
+anchor deploy --provider.cluster devnet
+```
+
+**Current Devnet Program ID:** `8sTHpKZ2jbTNBzCxmwFytcift1j6J2Nfj1s9WHGSoE5Y`
+
+#### Option B: Localnet (For Development)
+
+If you want to switch to localnet for testing:
+
+1. Update `anchor_project/Anchor.toml`:
+```toml
+[provider]
+cluster = "localnet"
+```
+
+2. Start local validator:
+```bash
+solana-test-validator
+```
+
+3. Deploy:
 ```bash
 cd anchor_project
 anchor build
-anchor test
-anchor deploy --provider.cluster devnet
+anchor deploy
 ```
 
 ## 🎨 Frontend Features
@@ -111,6 +142,7 @@ anchor deploy --provider.cluster devnet
 - ✅ Subtle wallet integration
 - ✅ No crypto jargon (Web2-friendly)
 - ✅ Responsive (mobile-first)
+- ✅ **Fully translated to English**
 
 ## 🤖 AI Analysis (Simulated)
 
@@ -127,11 +159,11 @@ Each business has AI-generated analysis that evaluates:
 
 | Business | Category | AI Score | Valuation | Yearly Growth |
 |----------|----------|----------|-----------|---------------|
-| Padaria São Pedro | Food | 87/100 | $850k | 18.5% |
-| Cafeteria Aroma | Food | 82/100 | $420k | 32.5% |
-| Oficina Mecânica | Automotive | 85/100 | $1.2M | 12.3% |
-| Sabor Nordestino | Food | 78/100 | $580k | 25.8% |
-| Academia Fit Zone | Health | 80/100 | $950k | 15.2% |
+| São Pedro Bakery | Food | 87/100 | $850k | 18.5% |
+| Aroma Coffee Shop | Food | 82/100 | $420k | 32.5% |
+| Modern Auto Repair | Automotive | 85/100 | $1.2M | 12.3% |
+| Northeastern Flavor | Food | 78/100 | $580k | 25.8% |
+| Fit Zone Gym | Health | 80/100 | $950k | 15.2% |
 
 ## 🔐 Smart Contract (Anchor)
 
@@ -167,10 +199,10 @@ Each business has AI-generated analysis that evaluates:
 - **Wallet**: Solana Wallet Adapter
 
 ### Blockchain
-- **Network**: Solana (Devnet)
+- **Network**: Solana Devnet
 - **Framework**: Anchor 0.32
 - **Language**: Rust
-- **Cluster**: Devnet
+- **Program ID**: `8sTHpKZ2jbTNBzCxmwFytcift1j6J2Nfj1s9WHGSoE5Y`
 
 ## 📊 Metrics
 
@@ -182,6 +214,8 @@ Each business has AI-generated analysis that evaluates:
 ✅ Pages: 6
 ✅ Components: 10+
 ✅ Mock Data: 5 complete businesses
+✅ Language: English
+✅ Network: Devnet
 ```
 
 ## 🎯 Next Steps
@@ -206,16 +240,43 @@ Each business has AI-generated analysis that evaluates:
 
 ## 🌐 Network
 
-**Currently**: Solana Devnet
+**Currently**: Solana **Devnet** (configured in `Anchor.toml`)
 
-To switch to mainnet: edit `frontend/app/providers/SolanaProvider.tsx`
+### Changing the Network
+
+#### Smart Contract (Anchor.toml)
+```toml
+[provider]
+cluster = "devnet"  # or "localnet" or "mainnet-beta"
+```
+
+#### Frontend
+The frontend automatically connects to Devnet by default. To change:
+
+```bash
+# Localnet
+NEXT_PUBLIC_SOLANA_NETWORK=localnet yarn dev
+
+# Devnet (default)
+yarn dev
+
+# Mainnet
+NEXT_PUBLIC_SOLANA_NETWORK=mainnet yarn dev
+```
 
 ## 📝 Documentation
 
 - **Frontend**: `frontend/README.md`
 - **Smart Contract**: `anchor_project/README.md`
+- **Scripts**: `scripts/README.md` - Deployment and development scripts
 - **IDL**: `anchor_project/target/idl/my_program.json`
 - **Project Description**: `PROJECT_DESCRIPTION.md`
+
+## 🔗 Important Links
+
+- **Solana Explorer**: https://explorer.solana.com/address/8sTHpKZ2jbTNBzCxmwFytcift1j6J2Nfj1s9WHGSoE5Y?cluster=devnet
+- **Devnet Faucet**: https://faucet.solana.com/
+- **Program ID**: `8sTHpKZ2jbTNBzCxmwFytcift1j6J2Nfj1s9WHGSoE5Y`
 
 ## 🤝 How to Contribute
 
@@ -224,6 +285,23 @@ To switch to mainnet: edit `frontend/app/providers/SolanaProvider.tsx`
 3. Commit your changes (`git commit -m 'Add NewFeature'`)
 4. Push to branch (`git push origin feature/NewFeature`)
 5. Open a Pull Request
+
+## ⚠️ Important Notes
+
+### Educational Prototype
+This is an **educational prototype** for School of Solana Season 8. 
+
+**NOT intended for production use without:**
+- Professional security audit
+- Proper KYC/AML compliance
+- Legal regulatory compliance
+- Real AI implementation
+- Production-ready infrastructure
+
+### Testnet Only
+- Uses **Solana Devnet** (testnet)
+- Do **NOT** invest real funds
+- Get free test SOL from https://faucet.solana.com/
 
 ## ⚖️ License
 
@@ -238,7 +316,7 @@ For questions about the project:
 
 ---
 
-**Status**: ✅ Frontend complete | 🚧 Blockchain integration in progress
+**Status**: ✅ Frontend complete | ✅ Blockchain deployed on Devnet | ✅ Fully translated to English
 
 **Last update**: January 2025
 

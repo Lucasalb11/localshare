@@ -102,49 +102,49 @@ pub mod my_program {
         offering.is_active = true;
         offering.bump = ctx.bumps.offering;
         
-        msg!("✅ Oferta criada com sucesso!");
-        msg!("Negócio: {}", offering.business);
-        msg!("Preço por share: {} lamports", price_per_share);
-        msg!("Shares disponíveis: {}", initial_shares);
+        msg!("✅ Offering created successfully!");
+        msg!("Business: {}", offering.business);
+        msg!("Price per share: {} lamports", price_per_share);
+        msg!("Shares available: {}", initial_shares);
         
         Ok(())
     }
 
-    /// Permite que investidores comprem shares de um negócio
-    /// Realiza a transferência de fundos e atribui as shares ao comprador
+    /// Allows investors to buy shares of a business
+    /// Performs fund transfer and assigns shares to the buyer
     /// 
-    /// # Segurança
-    /// - Valida que a oferta está ativa
-    /// - Valida disponibilidade de shares
-    /// - Transferência atômica de tokens via CPI
-    /// - Desativa oferta automaticamente quando esgotada
+    /// # Security
+    /// - Validates that the offering is active
+    /// - Validates share availability
+    /// - Atomic token transfer via CPI
+    /// - Automatically deactivates offering when exhausted
     pub fn buy_shares(ctx: Context<BuyShares>, amount: u64) -> Result<()> {
         let offering = &mut ctx.accounts.offering;
         
-        // Validação: Oferta deve estar ativa
+        // Validation: Offering must be active
         require!(offering.is_active, LocalshareError::OfferingNotActive);
         
-        // Validação: Quantidade deve ser maior que zero
+        // Validation: Amount must be greater than zero
         require!(amount > 0, LocalshareError::InvalidShareAmount);
         
-        // Validação: Deve haver shares suficientes disponíveis
+        // Validation: There must be enough shares available
         require!(
             amount <= offering.remaining_shares,
             LocalshareError::InsufficientShares
         );
         
-        // Calcula o custo total com proteção contra overflow
+        // Calculate total cost with overflow protection
         let total_cost = offering
             .price_per_share
             .checked_mul(amount)
             .ok_or(LocalshareError::MathOverflow)?;
         
-        msg!("💰 Processando compra de {} shares", amount);
-        msg!("Custo total: {} lamports", total_cost);
+        msg!("💰 Processing purchase of {} shares", amount);
+        msg!("Total cost: {} lamports", total_cost);
         
-        // Transfere tokens do comprador para o dono do negócio usando CPI
-        // Nota: Aqui usamos transfer direto de SOL para simplificar
-        // Em produção, usar SPL Token Program para tokens customizados
+        // Transfer tokens from buyer to business owner using CPI
+        // Note: Here we use direct SOL transfer for simplicity
+        // In production, use SPL Token Program for custom tokens
         anchor_lang::system_program::transfer(
             CpiContext::new(
                 ctx.accounts.system_program.to_account_info(),
@@ -156,96 +156,96 @@ pub mod my_program {
             total_cost,
         )?;
         
-        // Atualiza a quantidade de shares restantes
+        // Update remaining shares count
         offering.remaining_shares = offering
             .remaining_shares
             .checked_sub(amount)
             .ok_or(LocalshareError::MathOverflow)?;
         
-        // Se não há mais shares, desativa a oferta automaticamente
+        // If no more shares, deactivate offering automatically
         if offering.remaining_shares == 0 {
             offering.is_active = false;
-            msg!("🔒 Oferta esgotada e desativada automaticamente");
+            msg!("🔒 Offering exhausted and deactivated automatically");
         }
         
-        msg!("✅ Compra realizada com sucesso!");
-        msg!("Comprador: {}", ctx.accounts.buyer.key());
-        msg!("Shares restantes: {}", offering.remaining_shares);
+        msg!("✅ Purchase completed successfully!");
+        msg!("Buyer: {}", ctx.accounts.buyer.key());
+        msg!("Remaining shares: {}", offering.remaining_shares);
         
         Ok(())
     }
 }
 
 // ============================================================================
-// Structs de Contas (Account State)
+// Account State Structs
 // ============================================================================
 
-/// Configuração global do protocolo
+/// Global protocol configuration
 /// PDA: ["config"]
 #[account]
 pub struct Config {
-    /// Administrador do protocolo (pode atualizar configurações)
+    /// Protocol administrator (can update configurations)
     pub admin: Pubkey,
     
-    /// Mint do token usado para pagamentos (ex: USDC)
+    /// Token mint used for payments (e.g., USDC)
     pub payment_mint: Pubkey,
     
-    /// Bump seed da PDA
+    /// PDA bump seed
     pub bump: u8,
 }
 
-/// Representa um negócio registrado no protocolo
+/// Represents a registered business in the protocol
 /// PDA: ["business", owner.key()]
 #[account]
 pub struct Business {
-    /// Proprietário do negócio (empresário)
+    /// Business owner (entrepreneur)
     pub owner: Pubkey,
     
-    /// Nome do negócio (máximo 50 caracteres)
+    /// Business name (maximum 50 characters)
     pub name: String,
     
-    /// Mint das shares deste negócio (NFT ou Fungible Token)
+    /// Share mint of this business (NFT or Fungible Token)
     pub share_mint: Pubkey,
     
-    /// Bump seed da PDA
+    /// PDA bump seed
     pub bump: u8,
 }
 
-/// Representa uma oferta de shares de um negócio
+/// Represents a share offering from a business
 /// PDA: ["offering", business.key(), share_mint.key()]
 #[account]
 pub struct Offering {
-    /// Referência ao negócio que criou esta oferta
+    /// Reference to the business that created this offering
     pub business: Pubkey,
     
-    /// Mint das shares sendo oferecidas
+    /// Mint of the shares being offered
     pub share_mint: Pubkey,
     
-    /// Mint do token aceito como pagamento
+    /// Mint of the token accepted as payment
     pub payment_mint: Pubkey,
     
-    /// Preço por share (em lamports do payment_mint)
+    /// Price per share (in lamports of payment_mint)
     pub price_per_share: u64,
     
-    /// Quantidade de shares ainda disponíveis
+    /// Amount of shares still available
     pub remaining_shares: u64,
     
-    /// Se a oferta está ativa
+    /// Whether the offering is active
     pub is_active: bool,
     
-    /// Bump seed da PDA
+    /// PDA bump seed
     pub bump: u8,
 }
 
 // ============================================================================
-// Structs de Contexto (Accounts) para as Instruções
+// Context Structs (Accounts) for Instructions
 // ============================================================================
 
-/// Contexto para inicialização da configuração global
-/// Pode ser chamado apenas uma vez para configurar o protocolo
+/// Context for initializing the global configuration
+/// Can only be called once to configure the protocol
 #[derive(Accounts)]
 pub struct InitConfig<'info> {
-    /// Conta Config sendo inicializada como PDA
+    /// Config account being initialized as PDA
     /// Space: 8 (discriminator) + 32 (admin) + 32 (payment_mint) + 1 (bump) = 73 bytes
     #[account(
         init,
@@ -256,19 +256,19 @@ pub struct InitConfig<'info> {
     )]
     pub config: Account<'info, Config>,
     
-    /// Administrador que paga pela criação e será definido como admin
+    /// Administrator who pays for creation and will be set as admin
     #[account(mut)]
     pub admin: Signer<'info>,
     
-    /// System program para criar a conta
+    /// System program to create the account
     pub system_program: Program<'info, System>,
 }
 
-/// Contexto para registro de um novo negócio
-/// Permite que empresários criem seu perfil de negócio
+/// Context for registering a new business
+/// Allows entrepreneurs to create their business profile
 #[derive(Accounts)]
 pub struct RegisterBusiness<'info> {
-    /// Conta Business sendo inicializada como PDA
+    /// Business account being initialized as PDA
     /// Space: 8 (discriminator) + 32 (owner) + (4 + 50) (name String) + 32 (share_mint) + 1 (bump) = 127 bytes
     #[account(
         init,
@@ -279,19 +279,19 @@ pub struct RegisterBusiness<'info> {
     )]
     pub business: Account<'info, Business>,
     
-    /// Proprietário do negócio (empresário que paga pela criação)
+    /// Business owner (entrepreneur who pays for creation)
     #[account(mut)]
     pub owner: Signer<'info>,
     
-    /// System program para criar a conta
+    /// System program to create the account
     pub system_program: Program<'info, System>,
 }
 
-/// Contexto para criação de uma oferta de shares
-/// Permite que um negócio registrado crie uma oferta de shares
+/// Context for creating a share offering
+/// Allows a registered business to create a share offering
 #[derive(Accounts)]
 pub struct CreateOffering<'info> {
-    /// Conta Offering sendo inicializada como PDA
+    /// Offering account being initialized as PDA
     /// Space: 8 (discriminator) + 32 (business) + 32 (share_mint) + 32 (payment_mint) + 
     ///        8 (price_per_share) + 8 (remaining_shares) + 1 (is_active) + 1 (bump) = 122 bytes
     #[account(
@@ -303,86 +303,86 @@ pub struct CreateOffering<'info> {
     )]
     pub offering: Account<'info, Offering>,
     
-    /// Conta Business que está criando a oferta
-    /// Deve ter has_one = owner para validação
+    /// Business account creating the offering
+    /// Must have has_one = owner for validation
     #[account(has_one = owner)]
     pub business: Account<'info, Business>,
     
-    /// Conta Config global para obter o payment_mint
+    /// Global Config account to get the payment_mint
     #[account(
         seeds = [b"config"],
         bump = config.bump
     )]
     pub config: Account<'info, Config>,
     
-    /// Proprietário do negócio (deve assinar e pagar)
+    /// Business owner (must sign and pay)
     #[account(mut)]
     pub owner: Signer<'info>,
     
-    /// System program para criar a conta
+    /// System program to create the account
     pub system_program: Program<'info, System>,
 }
 
-/// Contexto para compra de shares
-/// Permite que investidores comprem shares de uma oferta ativa
+/// Context for buying shares
+/// Allows investors to buy shares from an active offering
 #[derive(Accounts)]
 pub struct BuyShares<'info> {
-    /// Conta Offering de onde as shares serão compradas
-    /// Deve ser mutável para atualizar remaining_shares
+    /// Offering account from which shares will be purchased
+    /// Must be mutable to update remaining_shares
     #[account(
         mut,
         constraint = offering.business == business.key() @ LocalshareError::InvalidBusiness
     )]
     pub offering: Account<'info, Offering>,
     
-    /// Conta Business relacionada à oferta
+    /// Business account related to the offering
     #[account(has_one = owner @ LocalshareError::InvalidBusinessOwner)]
     pub business: Account<'info, Business>,
     
-    /// Proprietário do negócio (recebe o pagamento)
-    /// Referenciado como 'owner' pelo has_one constraint
-    /// CHECK: Validado pelo constraint has_one no business
+    /// Business owner (receives payment)
+    /// Referenced as 'owner' by the has_one constraint
+    /// CHECK: Validated by has_one constraint in business
     #[account(mut)]
     pub owner: UncheckedAccount<'info>,
     
-    /// Comprador que está adquirindo as shares
+    /// Buyer acquiring the shares
     #[account(mut)]
     pub buyer: Signer<'info>,
     
-    /// System program (para transferências SOL)
+    /// System program (for SOL transfers)
     pub system_program: Program<'info, System>,
 }
 
 // ============================================================================
-// Erros Customizados
+// Custom Errors
 // ============================================================================
 
 #[error_code]
 pub enum LocalshareError {
-    #[msg("O nome do negócio não pode ser vazio")]
+    #[msg("Business name cannot be empty")]
     EmptyBusinessName,
     
-    #[msg("O nome do negócio não pode ter mais de 50 caracteres")]
+    #[msg("Business name cannot be longer than 50 characters")]
     BusinessNameTooLong,
     
-    #[msg("O preço por share deve ser maior que zero")]
+    #[msg("Price per share must be greater than zero")]
     InvalidPrice,
     
-    #[msg("A quantidade de shares deve ser maior que zero")]
+    #[msg("Share amount must be greater than zero")]
     InvalidShareAmount,
     
-    #[msg("Operação matemática resultou em overflow")]
+    #[msg("Math operation resulted in overflow")]
     MathOverflow,
     
-    #[msg("A oferta não está ativa")]
+    #[msg("Offering is not active")]
     OfferingNotActive,
     
-    #[msg("Não há shares suficientes disponíveis")]
+    #[msg("Not enough shares available")]
     InsufficientShares,
     
-    #[msg("Negócio inválido ou não corresponde à oferta")]
+    #[msg("Invalid business or does not match offering")]
     InvalidBusiness,
     
-    #[msg("Proprietário do negócio inválido")]
+    #[msg("Invalid business owner")]
     InvalidBusinessOwner,
 }
