@@ -362,7 +362,7 @@ export default function DashboardPage() {
                       Why do we need this information?
                     </p>
                     <p className="text-xs text-sky-200/80">
-                      This data is used by our AI to evaluate your business's financial health 
+                      This data is used by our AI to evaluate your business&apos;s financial health 
                       and provide a confidence score to investors.
                     </p>
                   </div>
