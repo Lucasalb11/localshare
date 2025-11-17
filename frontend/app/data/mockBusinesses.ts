@@ -2,10 +2,10 @@ import { BusinessData } from "../types/business";
 
 export const mockBusinesses: BusinessData[] = [
   {
-    id: "padaria-sao-pedro",
-    name: "São Pedro Bakery",
+    id: "st-peters-bakery",
+    name: "St. Peter's Bakery",
     category: "Food",
-    description: `São Pedro Bakery is a traditional establishment in the Pinheiros neighborhood, São Paulo, 
+    description: `St. Peter's Bakery is a traditional establishment in the Pinheiros neighborhood, São Paulo, 
     with over 15 years of history. Specializing in artisan breads and confectionery products, 
     we serve more than 500 customers daily. The business has a loyal customer base and is in the process 
     of expansion with plans to open a second location.
@@ -18,7 +18,7 @@ export const mockBusinesses: BusinessData[] = [
     location: {
       city: "São Paulo",
       state: "SP",
-      address: "Rua dos Pinheiros, 1234 - Pinheiros",
+      address: "Pinheiros Street, 1234 - Pinheiros",
     },
     images: [
       "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800",
@@ -27,7 +27,7 @@ export const mockBusinesses: BusinessData[] = [
     ],
     logo: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=200",
     owner: {
-      name: "Pedro Silva Santos",
+      name: "Peter Silva Santos",
       role: "Founder and Master Baker",
       avatar: "https://i.pravatar.cc/150?img=12",
     },
@@ -73,7 +73,7 @@ export const mockBusinesses: BusinessData[] = [
     },
   },
   {
-    id: "cafeteria-aroma",
+    id: "aroma-coffee-shop",
     name: "Aroma Coffee Shop",
     category: "Food",
     description: `Aroma Coffee Shop is a specialty coffee shop located in the heart of Vila Madalena. 
@@ -87,7 +87,7 @@ export const mockBusinesses: BusinessData[] = [
     location: {
       city: "São Paulo",
       state: "SP",
-      address: "Rua Harmonia, 456 - Vila Madalena",
+      address: "Harmonia Street, 456 - Vila Madalena",
     },
     images: [
       "https://images.unsplash.com/photo-1445116572660-236099ec97a0?w=800",
@@ -142,7 +142,7 @@ export const mockBusinesses: BusinessData[] = [
     },
   },
   {
-    id: "oficina-mecanica-moderna",
+    id: "modern-auto-repair",
     name: "Modern Auto Repair Shop",
     category: "Automotive Services",
     description: `Modern Auto Repair Shop has been operating for 20 years in the automotive market, specializing in 
@@ -158,7 +158,7 @@ export const mockBusinesses: BusinessData[] = [
     location: {
       city: "São Paulo",
       state: "SP",
-      address: "Av. dos Bandeirantes, 3200 - Ipiranga",
+      address: "Bandeirantes Avenue, 3200 - Ipiranga",
     },
     images: [
       "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800",
@@ -167,7 +167,7 @@ export const mockBusinesses: BusinessData[] = [
     ],
     logo: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=200",
     owner: {
-      name: "Roberto Carlos Almeida",
+      name: "Robert Carlos Almeida",
       role: "Mechanic and Owner",
       avatar: "https://i.pravatar.cc/150?img=33",
     },
@@ -213,7 +213,7 @@ export const mockBusinesses: BusinessData[] = [
     },
   },
   {
-    id: "restaurante-sabor-nordestino",
+    id: "northeastern-flavor",
     name: "Northeastern Flavor Restaurant",
     category: "Food",
     description: `Northeastern Flavor is a restaurant specializing in typical cuisine from Northeast Brazil, 
@@ -228,7 +228,7 @@ export const mockBusinesses: BusinessData[] = [
     location: {
       city: "São Paulo",
       state: "SP",
-      address: "Rua da Glória, 789 - Liberdade",
+      address: "Glory Street, 789 - Liberdade",
     },
     images: [
       "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=800",
@@ -237,7 +237,7 @@ export const mockBusinesses: BusinessData[] = [
     ],
     logo: "https://images.unsplash.com/photo-1552566626-52f8b828add9?w=200",
     owner: {
-      name: "Maria José da Silva",
+      name: "Maria Jose da Silva",
       role: "Chef and Owner",
       avatar: "https://i.pravatar.cc/150?img=9",
     },
@@ -283,7 +283,7 @@ export const mockBusinesses: BusinessData[] = [
     },
   },
   {
-    id: "academia-fit-zone",
+    id: "fit-zone-gym",
     name: "Fit Zone Gym",
     category: "Health and Wellness",
     description: `Fit Zone Gym is a mid-sized gym focusing on functional training, 
@@ -297,7 +297,7 @@ export const mockBusinesses: BusinessData[] = [
     location: {
       city: "São Paulo",
       state: "SP",
-      address: "Av. Paulista, 2500 - Consolação",
+      address: "Paulista Avenue, 2500 - Consolação",
     },
     images: [
       "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800",
