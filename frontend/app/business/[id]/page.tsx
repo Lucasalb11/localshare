@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 
 interface PageProps {
@@ -76,30 +77,49 @@ export default function BusinessDetailPage({ params }: PageProps) {
       setStatus("Preparing transaction...");
       setStatusType("");
 
-      // For demo: use mock owner address (in real scenario, fetch from business account)
-      // In production, you would fetch the business account to get the real owner
+      // For now, we'll use a mock business owner for demonstration
+      // In production, this would come from the actual business account on chain
       const mockOwnerPubkey = new PublicKey("BvWN5kqzufmJDLfQbpvGWbfL4ZSBKY3bH3EoJ4sXDq5i");
-      const mockShareMint = new PublicKey("ShareMint111111111111111111111111111111111");
 
       // Get PDAs
       const [businessPdaKey] = getBusinessPda(mockOwnerPubkey);
-      const [offeringPdaKey] = getOfferingPda(businessPdaKey, mockShareMint);
+      const [mintPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("mint"), businessPdaKey.toBuffer()],
+        program.programId
+      );
+      const [mintAuthorityPda] = PublicKey.findProgramAddressSync(
+        [Buffer.from("mint_authority"), businessPdaKey.toBuffer()],
+        program.programId
+      );
+      const [offeringPdaKey] = getOfferingPda(businessPdaKey, mintPda);
+
+      // Get the associated token account for the buyer
+      const buyerTokenAccount = await anchor.utils.token.associatedAddress({
+        mint: mintPda,
+        owner: publicKey,
+      });
 
       setStatus("Sending transaction to blockchain...");
 
-      // Call buy_shares instruction
+      // Call buy_shares instruction with all required accounts
       const tx = await program.methods
         .buyShares(new anchor.BN(shares))
         .accounts({
           offering: offeringPdaKey,
           business: businessPdaKey,
+          mint: mintPda,
+          mintAuthority: mintAuthorityPda,
+          buyerTokenAccount: buyerTokenAccount,
           owner: mockOwnerPubkey, // Business owner (receives payment)
           buyer: publicKey, // Current wallet (pays)
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+          associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
         })
         .rpc();
 
-      setStatus(`✅ Purchase successful! TX: ${tx.slice(0, 8)}...`);
+      setStatus(`✅ Purchase successful! You received ${shares} shares. TX: ${tx.slice(0, 8)}...`);
       setStatusType("success");
       setInvestmentAmount("");
 

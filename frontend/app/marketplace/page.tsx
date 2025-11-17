@@ -1,18 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { mockBusinesses } from "../data/mockBusinesses";
-import { MapPin, TrendingUp, Users, Star } from "lucide-react";
+import { MapPin, TrendingUp, Users, Star, Loader2 } from "lucide-react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useLocalshareProgram } from "../hooks/useLocalshareProgram";
+import { PublicKey } from "@solana/web3.js";
+import * as anchor from "@coral-xyz/anchor";
 
 export default function MarketplacePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  
+  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { connected } = useWallet();
+  const { program } = useLocalshareProgram();
+
   const categories = ["All", "Food", "Automotive Services", "Health and Wellness"];
-  
+
+  // Fetch businesses from blockchain
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      if (!program) {
+        setBusinesses(mockBusinesses); // Fallback to mock data
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        // For now, we'll use mock data enhanced with blockchain data
+        // In a real implementation, you'd fetch all businesses from the program
+        const enhancedBusinesses = mockBusinesses.map(async (business) => {
+          try {
+            // Try to fetch real data from blockchain for this business
+            const [businessPda] = PublicKey.findProgramAddressSync(
+              [Buffer.from("business"), new PublicKey(business.owner).toBuffer()],
+              program.programId
+            );
+
+            const businessAccount = await program.account.business.fetch(businessPda);
+
+            // If business exists on chain, use real data
+            return {
+              ...business,
+              onChain: true,
+              name: businessAccount.name,
+              shareMint: businessAccount.shareMint.toString(),
+            };
+          } catch (error) {
+            // Business not found on chain, use mock data
+            return {
+              ...business,
+              onChain: false,
+            };
+          }
+        });
+
+        const resolvedBusinesses = await Promise.all(enhancedBusinesses);
+        setBusinesses(resolvedBusinesses);
+      } catch (error) {
+        console.error("Error fetching businesses:", error);
+        setBusinesses(mockBusinesses); // Fallback
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBusinesses();
+  }, [program]);
+
   const filteredBusinesses = selectedCategory === "All"
-    ? mockBusinesses
-    : mockBusinesses.filter(b => b.category === selectedCategory);
+    ? businesses
+    : businesses.filter(b => b.category === selectedCategory);
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -52,8 +113,14 @@ export default function MarketplacePage() {
 
       {/* Business Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBusinesses.map((business) => (
+        {loading ? (
+          <div className="flex items-center justify-center py-24">
+            <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+            <span className="ml-3 text-slate-400">Loading businesses...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredBusinesses.map((business) => (
             <Link
               key={business.id}
               href={`/business/${business.id}`}
@@ -80,6 +147,14 @@ export default function MarketplacePage() {
                 <div className="absolute bottom-4 left-4 px-3 py-1 rounded-full bg-slate-900/90 backdrop-blur-sm text-slate-300 text-xs">
                   {business.category}
                 </div>
+
+                {/* On-chain indicator */}
+                {business.onChain && (
+                  <div className="absolute top-4 left-4 px-2 py-1 rounded-full bg-emerald-500/90 backdrop-blur-sm text-white text-xs font-medium flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                    On-chain
+                  </div>
+                )}
               </div>
 
               {/* Content */}
@@ -145,10 +220,11 @@ export default function MarketplacePage() {
                 </div>
               </div>
             </Link>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {filteredBusinesses.length === 0 && (
+        {!loading && filteredBusinesses.length === 0 && (
           <div className="text-center py-24">
             <p className="text-slate-400 text-lg">
               No businesses found in this category.

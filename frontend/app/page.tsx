@@ -23,7 +23,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-xl text-slate-300 max-w-3xl mx-auto">
-              Invest in bakeries, restaurants, gyms and other businesses in your neighborhood. 
+              Invest in bakeries, restaurants, gyms and other businesses in your neighborhood.
               Receive monthly dividends and help the local economy grow.
             </p>
 
@@ -35,7 +35,7 @@ export default function LandingPage() {
                 Explore Businesses
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              
+
               <Link
                 href="/dashboard"
                 className="px-8 py-4 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-50 font-semibold flex items-center gap-2 transition-all border border-slate-700"
@@ -77,9 +77,9 @@ export default function LandingPage() {
             <p className="text-sm text-amber-300">
               ⚠️ <strong>EDUCATIONAL PROTOTYPE</strong> - Uses Devnet SOL (testnet) • Do not invest real funds
             </p>
-            <a 
-              href="https://faucet.solana.com/" 
-              target="_blank" 
+            <a
+              href="https://faucet.solana.com/"
+              target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-emerald-400 hover:underline font-medium"
             >

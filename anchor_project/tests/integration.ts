@@ -74,7 +74,7 @@ describe("Localshare Lite - Testes de Integração", () => {
     console.log("\n🚀 Teste 1: Inicializando Config");
 
     const tx = await program.methods
-      .initConfig(paymentMint.publicKey)
+      .initConfig()
       .accounts({
         config: configPda,
         admin: admin.publicKey,
@@ -102,7 +102,7 @@ describe("Localshare Lite - Testes de Integração", () => {
     const businessName = "Café da Esquina";
 
     const tx = await program.methods
-      .registerBusiness(businessName, shareMint.publicKey)
+      .registerBusiness(businessName)
       .accounts({
         business: businessPda,
         owner: businessOwner.publicKey,
@@ -127,8 +127,57 @@ describe("Localshare Lite - Testes de Integração", () => {
     console.log("   Share Mint:", businessAccount.shareMint.toString());
   });
 
+  it("2.5️⃣ Cria o mint das shares do negócio (create_business_mint)", async () => {
+    console.log("\n🚀 Teste 2.5: Criando Mint das Shares");
+
+    // Calcular as PDAs para mint e mint_authority
+    const [mintPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint"), businessPda.toBuffer()],
+      program.programId
+    );
+
+    const [mintAuthorityPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint_authority"), businessPda.toBuffer()],
+      program.programId
+    );
+
+    const tx = await program.methods
+      .createBusinessMint()
+      .accounts({
+        business: businessPda,
+        mint: mintPda,
+        mintAuthority: mintAuthorityPda,
+        owner: businessOwner.publicKey,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([businessOwner])
+      .rpc();
+
+    console.log("Transaction signature:", tx);
+
+    // Verificar que o mint foi criado
+    const mintAccount = await anchor.utils.token.getMint(
+      provider.connection,
+      mintPda
+    );
+
+    console.log("✅ Mint criado com sucesso!");
+    console.log("   Mint Address:", mintPda.toString());
+    console.log("   Mint Authority:", mintAuthorityPda.toString());
+    console.log("   Decimals:", mintAccount.decimals);
+    console.log("   Supply:", mintAccount.supply.toString());
+  });
+
   it("3️⃣ Cria uma oferta de shares (create_offering)", async () => {
     console.log("\n🚀 Teste 3: Criando Oferta");
+
+    // Calcular o mint PDA correto
+    const [mintPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint"), businessPda.toBuffer()],
+      program.programId
+    );
 
     const pricePerShare = new anchor.BN(0.1 * LAMPORTS_PER_SOL); // 0.1 SOL por share
     const initialShares = new anchor.BN(100); // 100 shares disponíveis
@@ -170,6 +219,23 @@ describe("Localshare Lite - Testes de Integração", () => {
     const pricePerShare = 0.1 * LAMPORTS_PER_SOL;
     const expectedCost = amountToBuy.toNumber() * pricePerShare;
 
+    // Calcular as PDAs necessárias
+    const [mintPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint"), businessPda.toBuffer()],
+      program.programId
+    );
+
+    const [mintAuthorityPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint_authority"), businessPda.toBuffer()],
+      program.programId
+    );
+
+    // Calcular o associated token account do buyer
+    const buyerTokenAccount = await anchor.utils.token.associatedAddress({
+      mint: mintPda,
+      owner: buyer.publicKey,
+    });
+
     // Saldos antes da transação
     const businessOwnerBalanceBefore = await provider.connection.getBalance(
       businessOwner.publicKey
@@ -186,9 +252,15 @@ describe("Localshare Lite - Testes de Integração", () => {
       .accounts({
         offering: offeringPda,
         business: businessPda,
+        mint: mintPda,
+        mintAuthority: mintAuthorityPda,
+        buyerTokenAccount: buyerTokenAccount,
         owner: businessOwner.publicKey,
         buyer: buyer.publicKey,
+        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
       })
       .signers([buyer])
       .rpc();
@@ -224,14 +296,39 @@ describe("Localshare Lite - Testes de Integração", () => {
       "Business owner deve ter recebido o valor correto"
     );
 
+    // Verificar que os tokens foram minted para o buyer
+    const buyerTokenBalance = await provider.connection.getTokenAccountBalance(buyerTokenAccount);
+    assert.equal(
+      buyerTokenBalance.value.uiAmount,
+      amountToBuy.toNumber(),
+      "Buyer deve ter recebido os tokens corretos"
+    );
+
     console.log("✅ Compra realizada com sucesso!");
     console.log("   Shares compradas:", amountToBuy.toString());
     console.log("   Shares restantes:", offeringAccount.remainingShares.toString());
     console.log("   Valor pago:", receivedAmount / LAMPORTS_PER_SOL, "SOL");
+    console.log("   Tokens recebidos:", buyerTokenBalance.value.uiAmount);
   });
 
   it("5️⃣ Testa validações: Compra com quantidade inválida", async () => {
     console.log("\n🚀 Teste 5: Tentando comprar 0 shares (deve falhar)");
+
+    // Calcular as PDAs necessárias
+    const [mintPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint"), businessPda.toBuffer()],
+      program.programId
+    );
+
+    const [mintAuthorityPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint_authority"), businessPda.toBuffer()],
+      program.programId
+    );
+
+    const buyerTokenAccount = await anchor.utils.token.associatedAddress({
+      mint: mintPda,
+      owner: buyer.publicKey,
+    });
 
     try {
       await program.methods
@@ -239,9 +336,15 @@ describe("Localshare Lite - Testes de Integração", () => {
         .accounts({
           offering: offeringPda,
           business: businessPda,
+          mint: mintPda,
+          mintAuthority: mintAuthorityPda,
+          buyerTokenAccount: buyerTokenAccount,
           owner: businessOwner.publicKey,
           buyer: buyer.publicKey,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+          associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
         })
         .signers([buyer])
         .rpc();
@@ -256,15 +359,37 @@ describe("Localshare Lite - Testes de Integração", () => {
   it("6️⃣ Testa validações: Compra mais shares do que disponível", async () => {
     console.log("\n🚀 Teste 6: Tentando comprar mais shares do que disponível (deve falhar)");
 
+    // Calcular as PDAs necessárias
+    const [mintPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint"), businessPda.toBuffer()],
+      program.programId
+    );
+
+    const [mintAuthorityPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint_authority"), businessPda.toBuffer()],
+      program.programId
+    );
+
+    const buyerTokenAccount = await anchor.utils.token.associatedAddress({
+      mint: mintPda,
+      owner: buyer.publicKey,
+    });
+
     try {
       await program.methods
         .buyShares(new anchor.BN(1000)) // Apenas 90 disponíveis
         .accounts({
           offering: offeringPda,
           business: businessPda,
+          mint: mintPda,
+          mintAuthority: mintAuthorityPda,
+          buyerTokenAccount: buyerTokenAccount,
           owner: businessOwner.publicKey,
           buyer: buyer.publicKey,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+          associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
         })
         .signers([buyer])
         .rpc();
@@ -279,6 +404,22 @@ describe("Localshare Lite - Testes de Integração", () => {
   it("7️⃣ Compra todas as shares restantes e verifica desativação automática", async () => {
     console.log("\n🚀 Teste 7: Comprando todas as shares restantes");
 
+    // Calcular as PDAs necessárias
+    const [mintPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint"), businessPda.toBuffer()],
+      program.programId
+    );
+
+    const [mintAuthorityPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint_authority"), businessPda.toBuffer()],
+      program.programId
+    );
+
+    const buyerTokenAccount = await anchor.utils.token.associatedAddress({
+      mint: mintPda,
+      owner: buyer.publicKey,
+    });
+
     const offeringBefore = await program.account.offering.fetch(offeringPda);
     const remainingShares = offeringBefore.remainingShares;
 
@@ -289,9 +430,15 @@ describe("Localshare Lite - Testes de Integração", () => {
       .accounts({
         offering: offeringPda,
         business: businessPda,
+        mint: mintPda,
+        mintAuthority: mintAuthorityPda,
+        buyerTokenAccount: buyerTokenAccount,
         owner: businessOwner.publicKey,
         buyer: buyer.publicKey,
+        tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+        associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
       })
       .signers([buyer])
       .rpc();
@@ -316,15 +463,37 @@ describe("Localshare Lite - Testes de Integração", () => {
   it("8️⃣ Testa validações: Compra de oferta inativa", async () => {
     console.log("\n🚀 Teste 8: Tentando comprar de oferta inativa (deve falhar)");
 
+    // Calcular as PDAs necessárias
+    const [mintPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint"), businessPda.toBuffer()],
+      program.programId
+    );
+
+    const [mintAuthorityPda] = PublicKey.findProgramAddressSync(
+      [Buffer.from("mint_authority"), businessPda.toBuffer()],
+      program.programId
+    );
+
+    const buyerTokenAccount = await anchor.utils.token.associatedAddress({
+      mint: mintPda,
+      owner: buyer.publicKey,
+    });
+
     try {
       await program.methods
         .buyShares(new anchor.BN(1))
         .accounts({
           offering: offeringPda,
           business: businessPda,
+          mint: mintPda,
+          mintAuthority: mintAuthorityPda,
+          buyerTokenAccount: buyerTokenAccount,
           owner: businessOwner.publicKey,
           buyer: buyer.publicKey,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+          associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
         })
         .signers([buyer])
         .rpc();

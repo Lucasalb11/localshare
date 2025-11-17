@@ -4,8 +4,8 @@ import { SolanaProvider } from "./providers/SolanaProvider";
 import { Navbar } from "./components/Navbar";
 
 export const metadata: Metadata = {
-  title: "Localshare - Invista em Negócios Locais",
-  description: "Plataforma de investimento em negócios locais com blockchain. Invista em padarias, restaurantes e outros estabelecimentos do seu bairro.",
+  title: "Localshare - Invest in Local Businesses",
+  description: "Blockchain-powered platform connecting investors with local businesses. Invest in bakeries, restaurants and other neighborhood establishments.",
 };
 
 export default function RootLayout({
