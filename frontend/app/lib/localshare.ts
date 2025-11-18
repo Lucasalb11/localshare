@@ -1,14 +1,13 @@
 import { AnchorProvider, Program, Idl } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 import idl from "../idl/localshare.json";
+import { PROGRAM_ID } from "./constants";
 
 /**
  * Program ID do Localshare Lite
- * Substitua este valor com o endereço real após o deploy
+ * Must match the deployed program ID on the target network
  */
-export const LOCALSHARE_PROGRAM_ID = new PublicKey(
-  "8sTHpKZ2jbTNBzCxmwFytcift1j6J2Nfj1s9WHGSoE5Y"
-);
+export const LOCALSHARE_PROGRAM_ID = PROGRAM_ID;
 
 /**
  * Cria uma instância do programa Localshare
