@@ -6,7 +6,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { mockBusinesses } from "../../data/mockBusinesses";
 import { useLocalshareProgram } from "../../hooks/useLocalshareProgram";
-import { getBusinessPda, getOfferingPda } from "../../lib/localshare";
+import { getBusinessPda, getOfferingPda, getMintPda, getMintAuthorityPda } from "../../lib/localshare";
 import * as anchor from "@coral-xyz/anchor";
 import {
   MapPin,
@@ -77,20 +77,13 @@ export default function BusinessDetailPage({ params }: PageProps) {
       setStatus("Preparing transaction...");
       setStatusType("");
 
-      // For now, we'll use a mock business owner for demonstration
-      // In production, this would come from the actual business account on chain
-      const mockOwnerPubkey = new PublicKey("BvWN5kqzufmJDLfQbpvGWbfL4ZSBKY3bH3EoJ4sXDq5i");
+      const ownerPubkeyStr = (business as any).ownerPubkey || "BvWN5kqzufmJDLfQbpvGWbfL4ZSBKY3bH3EoJ4sXDq5i";
+      const mockOwnerPubkey = new PublicKey(ownerPubkeyStr);
 
       // Get PDAs
       const [businessPdaKey] = getBusinessPda(mockOwnerPubkey);
-      const [mintPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("mint"), businessPdaKey.toBuffer()],
-        program.programId
-      );
-      const [mintAuthorityPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("mint_authority"), businessPdaKey.toBuffer()],
-        program.programId
-      );
+      const [mintPda] = getMintPda(businessPdaKey);
+      const [mintAuthorityPda] = getMintAuthorityPda(businessPdaKey);
       const [offeringPdaKey] = getOfferingPda(businessPdaKey, mintPda);
 
       // Get the associated token account for the buyer
@@ -102,16 +95,21 @@ export default function BusinessDetailPage({ params }: PageProps) {
       setStatus("Sending transaction to blockchain...");
 
       // Call buy_shares instruction with all required accounts
+      const offeringVault = await anchor.utils.token.associatedAddress({
+        mint: mintPda,
+        owner: offeringPdaKey,
+      });
+
       const tx = await program.methods
         .buyShares(new anchor.BN(shares))
         .accounts({
           offering: offeringPdaKey,
           business: businessPdaKey,
           mint: mintPda,
-          mintAuthority: mintAuthorityPda,
+          offeringVault: offeringVault,
           buyerTokenAccount: buyerTokenAccount,
-          owner: mockOwnerPubkey, // Business owner (receives payment)
-          buyer: publicKey, // Current wallet (pays)
+          owner: mockOwnerPubkey,
+          buyer: publicKey,
           tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
           associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
           systemProgram: SystemProgram.programId,

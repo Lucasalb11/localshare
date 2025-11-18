@@ -8,6 +8,8 @@ import { useWallet } from "@solana/wallet-adapter-react";
 export function Navbar() {
   const pathname = usePathname();
   const { connected } = useWallet();
+  const [mounted, setMounted] = require('react').useState(false);
+  require('react').useEffect(() => { setMounted(true); }, []);
 
   const navItems = [
     { href: "/", label: "Home" },
@@ -47,7 +49,9 @@ export function Navbar() {
 
           {/* Wallet Button */}
           <div className="flex items-center gap-4">
-            <WalletMultiButton className="!bg-gradient-to-r from-emerald-500 to-sky-500 hover:from-emerald-600 hover:to-sky-600 !rounded-lg !text-sm !font-medium !h-10" />
+            {mounted && (
+              <WalletMultiButton className="!bg-gradient-to-r from-emerald-500 to-sky-500 hover:from-emerald-600 hover:to-sky-600 !rounded-lg !text-sm !font-medium !h-10" />
+            )}
           </div>
         </div>
       </div>

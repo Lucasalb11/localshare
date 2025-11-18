@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, TrendingUp, Shield, Users, Zap } from "lucide-react";
+import { ArrowRight, TrendingUp, Shield, Users, Zap, Building2 } from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -213,13 +213,22 @@ export default function LandingPage() {
               <p className="text-xl text-slate-300">
                 Connect your wallet and start investing in minutes.
               </p>
-              <Link
-                href="/marketplace"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-500 to-sky-500 hover:from-emerald-600 hover:to-sky-600 rounded-xl text-white font-semibold transition-all shadow-lg shadow-emerald-500/25"
-              >
-                View Opportunities
-                <ArrowRight className="w-5 h-5" />
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  href="/marketplace"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-500 to-sky-500 hover:from-emerald-600 hover:to-sky-600 rounded-xl text-white font-semibold transition-all shadow-lg shadow-emerald-500/25"
+                >
+                  View Opportunities
+                  <ArrowRight className="w-5 h-5" />
+                </Link>
+                <Link
+                  href="/register-business"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-xl text-slate-300 hover:text-slate-50 font-semibold transition-all"
+                >
+                  Register Your Business
+                  <Building2 className="w-5 h-5" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>

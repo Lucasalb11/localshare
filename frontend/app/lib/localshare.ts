@@ -60,3 +60,29 @@ export function getOfferingPda(
     LOCALSHARE_PROGRAM_ID
   );
 }
+
+/**
+ * Deriva o PDA do Mint de um Business
+ * Seeds: ["mint", business.toBuffer()]
+ * @param business - PublicKey do business
+ * @returns [PublicKey, bump]
+ */
+export function getMintPda(business: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("mint"), business.toBuffer()],
+    LOCALSHARE_PROGRAM_ID
+  );
+}
+
+/**
+ * Deriva o PDA da Mint Authority de um Business
+ * Seeds: ["mint_authority", business.toBuffer()]
+ * @param business - PublicKey do business
+ * @returns [PublicKey, bump]
+ */
+export function getMintAuthorityPda(business: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("mint_authority"), business.toBuffer()],
+    LOCALSHARE_PROGRAM_ID
+  );
+}

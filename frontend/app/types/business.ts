@@ -26,6 +26,7 @@ export interface BusinessData {
   images: string[];
   logo: string;
   owner: BusinessOwner;
+  ownerPubkey?: string;
   financials: BusinessFinancials;
   sharesInfo: {
     totalShares: number;

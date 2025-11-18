@@ -5,7 +5,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, SystemProgram, Keypair } from "@solana/web3.js";
 import { Store, Upload, DollarSign, TrendingUp, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import { useLocalshareProgram } from "../hooks/useLocalshareProgram";
-import { getBusinessPda, getOfferingPda, getConfigPda } from "../lib/localshare";
+import { getBusinessPda, getOfferingPda, getConfigPda, getMintPda, getMintAuthorityPda } from "../lib/localshare";
 import * as anchor from "@coral-xyz/anchor";
 
 export default function DashboardPage() {
@@ -48,35 +48,48 @@ export default function DashboardPage() {
 
     try {
       setLoading(true);
-      setStatus("Creating share mint...");
-
-      // Generate a new keypair for the share mint
-      const shareMint = Keypair.generate();
-
-      // Get Business PDA
-      const [businessPdaKey] = getBusinessPda(publicKey);
-      setBusinessPda(businessPdaKey);
-
       setStatus("Registering business on blockchain...");
 
-      // Call register_business instruction
+      const [businessPdaKey] = getBusinessPda(publicKey);
+      setBusinessPda(businessPdaKey);
+      const [mintPda] = getMintPda(businessPdaKey);
+      const [mintAuthorityPda] = getMintAuthorityPda(businessPdaKey);
+      const ownerTokenAccount = await anchor.utils.token.associatedAddress({
+        mint: mintPda,
+        owner: publicKey,
+      });
+
+      const [configPdaKey] = getConfigPda();
+      try {
+        await program.methods
+          .initConfig()
+          .accounts({
+            config: configPdaKey,
+            admin: publicKey,
+            systemProgram: SystemProgram.programId,
+          })
+          .rpc();
+      } catch (_) {}
+
       const tx = await program.methods
-        .registerBusiness(businessName, shareMint.publicKey)
+        .registerBusiness(businessName)
         .accounts({
           business: businessPdaKey,
+          mint: mintPda,
+          mintAuthority: mintAuthorityPda,
+          ownerTokenAccount: ownerTokenAccount,
           owner: publicKey,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+          associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         })
         .rpc();
 
       setStatus(`✅ Business registered! TX: ${tx.slice(0, 8)}...`);
       setStatusType("success");
-      
-      // Store shareMint for next step
-      (window as any).localshareShareMint = shareMint.publicKey.toBase58();
 
       setTimeout(() => {
-        setStep(3); // Go to offering step
+        setStep(3);
       }, 2000);
     } catch (error: any) {
       console.error("Error registering business:", error);
@@ -108,31 +121,36 @@ export default function DashboardPage() {
       setLoading(true);
       setStatus("Creating offering...");
 
-      // Get share mint from previous step
-      const shareMintStr = (window as any).localshareShareMint;
-      if (!shareMintStr) {
-        throw new Error("Share mint not found. Please register business first.");
-      }
-      const shareMint = new PublicKey(shareMintStr);
-
-      // Get PDAs
       const [configPdaKey] = getConfigPda();
-      const [offeringPdaKey] = getOfferingPda(businessPda, shareMint);
+      const [mintPda] = getMintPda(businessPda);
+      const [offeringPdaKey] = getOfferingPda(businessPda, mintPda);
       setOfferingPda(offeringPdaKey);
 
-      // Price in lamports (0.01 SOL = 10000000 lamports)
-      const priceInLamports = new anchor.BN(price * 1000000); // price in micro-SOL
+      const ownerTokenAccount = await anchor.utils.token.associatedAddress({
+        mint: mintPda,
+        owner: publicKey,
+      });
+      const offeringVault = await anchor.utils.token.associatedAddress({
+        mint: mintPda,
+        owner: offeringPdaKey,
+      });
+
+      const priceInLamports = Math.floor(price * 1000000);
 
       setStatus("Submitting to blockchain...");
 
-      // Call create_offering instruction
       const tx = await program.methods
-        .createOffering(priceInLamports, new anchor.BN(shares))
+        .createOffering(priceInLamports, shares)
         .accounts({
           offering: offeringPdaKey,
           business: businessPda,
           config: configPdaKey,
+          mint: mintPda,
+          ownerTokenAccount: ownerTokenAccount,
+          offeringVault: offeringVault,
           owner: publicKey,
+          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
+          associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         })
         .rpc();

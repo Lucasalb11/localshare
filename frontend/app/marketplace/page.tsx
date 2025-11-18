@@ -35,12 +35,14 @@ export default function MarketplacePage() {
         const enhancedBusinesses = mockBusinesses.map(async (business) => {
           try {
             // Try to fetch real data from blockchain for this business
+            if (!business.ownerPubkey) throw new Error('No owner pubkey')
+            const ownerPk = new PublicKey(business.ownerPubkey)
             const [businessPda] = PublicKey.findProgramAddressSync(
-              [Buffer.from("business"), new PublicKey(business.owner).toBuffer()],
+              [Buffer.from("business"), ownerPk.toBuffer()],
               program.programId
             );
 
-            const businessAccount = await program.account.business.fetch(businessPda);
+            const businessAccount = await (program.account as any).business.fetch(businessPda);
 
             // If business exists on chain, use real data
             return {
