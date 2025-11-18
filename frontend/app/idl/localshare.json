@@ -14,14 +14,14 @@
     {
       "name": "buy_shares",
       "docs": [
-        "Allows investors to buy shares of a business",
-        "Performs fund transfer and mints shares to the buyer",
+        "Allows investors to buy shares directly from a listed business",
+        "Transfers SOL from buyer to treasury and transfers share tokens from vault to buyer",
         "",
         "# Security",
-        "- Validates that the offering is active",
-        "- Validates share availability",
-        "- Atomic SOL transfer and token minting via CPI",
-        "- Automatically deactivates offering when exhausted"
+        "- Requires that the business is listed (is_listed == true)",
+        "- Validates share availability in vault",
+        "- Atomic SOL transfer and token transfer via CPI",
+        "- Overflow protection for price calculations"
       ],
       "discriminator": [
         40,
@@ -32,6 +32,261 @@
         37,
         106,
         108
+      ],
+      "accounts": [
+        {
+          "name": "buyer",
+          "docs": [
+            "Buyer who is purchasing the shares"
+          ],
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "business",
+          "docs": [
+            "Business account from which shares are being purchased",
+            "Must be mutable to potentially track state changes"
+          ],
+          "writable": true
+        },
+        {
+          "name": "shares_vault",
+          "docs": [
+            "Shares vault PDA that holds all the business shares",
+            "PDA: [\"shares_vault\", business.key()]"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101,
+                  115,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "business"
+              }
+            ]
+          }
+        },
+        {
+          "name": "treasury",
+          "docs": [
+            "Treasury account that receives SOL payments",
+            "Must match business.treasury"
+          ],
+          "writable": true
+        },
+        {
+          "name": "buyer_shares_ata",
+          "docs": [
+            "Buyer's associated token account to receive the share tokens"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "buyer"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "share_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "share_mint",
+          "docs": [
+            "Share mint account for the business"
+          ]
+        },
+        {
+          "name": "share_mint_authority",
+          "docs": [
+            "Share mint authority PDA that controls the shares_vault",
+            "PDA: [\"share_mint_authority\", business.key()]"
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "business"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "docs": [
+            "Token program for SPL token operations"
+          ],
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "System program for SOL transfers"
+          ],
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "associated_token_program",
+          "docs": [
+            "Associated token program for ATA creation"
+          ],
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "rent",
+          "docs": [
+            "Rent sysvar (for PDA validation)"
+          ],
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount_shares",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "buy_shares_from_offering",
+      "docs": [
+        "Allows investors to buy shares from an offering",
+        "Performs fund transfer and mints shares to the buyer",
+        "",
+        "# Security",
+        "- Validates that the offering is active",
+        "- Validates share availability",
+        "- Atomic SOL transfer and token minting via CPI",
+        "- Automatically deactivates offering when exhausted"
+      ],
+      "discriminator": [
+        65,
+        99,
+        221,
+        165,
+        230,
+        206,
+        140,
+        91
       ],
       "accounts": [
         {
@@ -201,6 +456,72 @@
         {
           "name": "amount",
           "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "configure_offering",
+      "docs": [
+        "Configures the offering parameters for a business",
+        "Sets total shares, price per share, and treasury address",
+        "",
+        "# Security",
+        "- Only the business owner can configure offerings",
+        "- Validates that total_shares and price_per_share are greater than zero",
+        "- Does NOT list the business (is_listed remains false)"
+      ],
+      "discriminator": [
+        88,
+        159,
+        157,
+        80,
+        61,
+        190,
+        103,
+        70
+      ],
+      "accounts": [
+        {
+          "name": "business",
+          "docs": [
+            "Business account being configured",
+            "Must be mutable to update offering parameters",
+            "Uses has_one constraint to ensure only the owner can call this"
+          ],
+          "writable": true
+        },
+        {
+          "name": "owner",
+          "docs": [
+            "Business owner (signer)",
+            "Must match the owner field in the business account"
+          ],
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "business"
+          ]
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "System program (for potential future use)"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "total_shares",
+          "type": "u64"
+        },
+        {
+          "name": "price_per_share_lamports",
+          "type": "u64"
+        },
+        {
+          "name": "treasury",
+          "type": "pubkey"
         }
       ]
     },
@@ -469,14 +790,235 @@
       "args": []
     },
     {
+      "name": "init_share_mint",
+      "docs": [
+        "Initializes the share mint and vault for a business",
+        "Creates an SPL mint representing business equity tokens and mints all shares into a vault",
+        "",
+        "# Security",
+        "- Only the business owner can initialize the share mint",
+        "- Requires that total_shares > 0 (must call configure_offering first)",
+        "- Creates a dedicated mint with decimals = 0 (whole shares only)",
+        "- All shares are minted into a PDA-controlled vault"
+      ],
+      "discriminator": [
+        245,
+        34,
+        69,
+        243,
+        214,
+        20,
+        149,
+        76
+      ],
+      "accounts": [
+        {
+          "name": "business",
+          "docs": [
+            "Business account being configured",
+            "Must be mutable to update share_mint field",
+            "Uses has_one constraint to ensure only the owner can call this"
+          ],
+          "writable": true
+        },
+        {
+          "name": "owner",
+          "docs": [
+            "Business owner (signer)",
+            "Must match the owner field in the business account"
+          ],
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "business"
+          ]
+        },
+        {
+          "name": "share_mint",
+          "docs": [
+            "Share mint account for business equity tokens",
+            "PDA: [\"share_mint\", business.key()]"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "business"
+              }
+            ]
+          }
+        },
+        {
+          "name": "share_mint_authority",
+          "docs": [
+            "Authority for the share mint",
+            "PDA: [\"share_mint_authority\", business.key()]"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101,
+                  95,
+                  109,
+                  105,
+                  110,
+                  116,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "business"
+              }
+            ]
+          }
+        },
+        {
+          "name": "shares_vault",
+          "docs": [
+            "Token vault for storing all business shares",
+            "PDA: [\"shares_vault\", business.key()]"
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  104,
+                  97,
+                  114,
+                  101,
+                  115,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "business"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "docs": [
+            "Token program for SPL token operations"
+          ],
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "System program for account creation"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "list_business",
+      "docs": [
+        "Lists a business on the marketplace",
+        "Sets is_listed to true, making the business available for investment",
+        "",
+        "# Security",
+        "- Only the business owner can list their business",
+        "- Requires that total_shares > 0",
+        "- Requires that price_per_share_lamports > 0",
+        "- Requires that share_mint is initialized (not default)",
+        "- Prevents double-listing (returns error if already listed)"
+      ],
+      "discriminator": [
+        6,
+        80,
+        113,
+        214,
+        4,
+        126,
+        171,
+        170
+      ],
+      "accounts": [
+        {
+          "name": "business",
+          "docs": [
+            "Business account being listed",
+            "Must be mutable to update is_listed field",
+            "Uses has_one constraint to ensure only the owner can call this"
+          ],
+          "writable": true
+        },
+        {
+          "name": "owner",
+          "docs": [
+            "Business owner (signer)",
+            "Must match the owner field in the business account"
+          ],
+          "signer": true,
+          "relations": [
+            "business"
+          ]
+        },
+        {
+          "name": "system_program",
+          "docs": [
+            "System program (for potential future use)"
+          ],
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "register_business",
       "docs": [
-        "Registers a new business in the protocol",
+        "Registers a new business in the protocol or updates an existing one",
         "Allows local entrepreneurs to register and offer shares",
         "",
         "# Security",
         "- Each owner can only have one business (unique PDA per owner)",
-        "- Name is validated to not exceed size limit"
+        "- Name is validated to not exceed size limit",
+        "- Supports upsert: initializes if new, updates name if exists"
       ],
       "discriminator": [
         73,
@@ -491,6 +1033,10 @@
       "accounts": [
         {
           "name": "business",
+          "docs": [
+            "Business account PDA: [\"business\", owner.key()]",
+            "Space: 8 (discriminator) + 32 (owner) + (4 + 50) (name) + 32 (share_mint) + 8 (total_shares) + 8 (price_per_share_lamports) + 32 (treasury) + 1 (is_listed) + 1 (bump) = 176 bytes"
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -516,6 +1062,10 @@
         },
         {
           "name": "mint",
+          "docs": [
+            "Mint account for business shares",
+            "PDA: [\"mint\", business.key()]"
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -537,6 +1087,10 @@
         },
         {
           "name": "mint_authority",
+          "docs": [
+            "Mint authority PDA for the business",
+            "PDA: [\"mint_authority\", business.key()]"
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -568,6 +1122,9 @@
         },
         {
           "name": "owner_token_account",
+          "docs": [
+            "Owner's token account for receiving shares"
+          ],
           "writable": true,
           "pda": {
             "seeds": [
@@ -658,6 +1215,9 @@
         },
         {
           "name": "owner",
+          "docs": [
+            "Business owner (signer)"
+          ],
           "writable": true,
           "signer": true
         },
@@ -734,6 +1294,19 @@
         146,
         39
       ]
+    },
+    {
+      "name": "ShareMintAuthority",
+      "discriminator": [
+        79,
+        202,
+        178,
+        172,
+        242,
+        161,
+        232,
+        155
+      ]
     }
   ],
   "errors": [
@@ -781,6 +1354,16 @@
       "code": 6008,
       "name": "InvalidBusinessOwner",
       "msg": "Invalid business owner"
+    },
+    {
+      "code": 6009,
+      "name": "BusinessAlreadyInitialized",
+      "msg": "Business is already initialized and cannot be re-initialized"
+    },
+    {
+      "code": 6010,
+      "name": "BusinessAlreadyListed",
+      "msg": "Business is already listed on the marketplace"
     }
   ],
   "types": [
@@ -813,6 +1396,34 @@
               "Share mint of this business (NFT or Fungible Token)"
             ],
             "type": "pubkey"
+          },
+          {
+            "name": "total_shares",
+            "docs": [
+              "Total number of shares issued"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "price_per_share_lamports",
+            "docs": [
+              "Price per share in lamports"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "treasury",
+            "docs": [
+              "Treasury account for receiving payments"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "is_listed",
+            "docs": [
+              "Whether the business is listed on the marketplace"
+            ],
+            "type": "bool"
           },
           {
             "name": "bump",
@@ -938,6 +1549,32 @@
             "name": "bump",
             "docs": [
               "PDA bump seed"
+            ],
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ShareMintAuthority",
+      "docs": [
+        "Authority for minting business equity share tokens",
+        "PDA: [\"share_mint_authority\", business.key()]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "business",
+            "docs": [
+              "Business this authority belongs to"
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "docs": [
+              "Bump seed"
             ],
             "type": "u8"
           }

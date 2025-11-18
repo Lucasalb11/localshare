@@ -98,3 +98,42 @@ export function getMintAuthorityPda(business: PublicKey): [PublicKey, number] {
     LOCALSHARE_PROGRAM_ID
   );
 }
+
+/**
+ * Deriva o PDA do Share Mint de um Business
+ * Seeds: ["share_mint", business.toBuffer()]
+ * @param business - PublicKey do business
+ * @returns [PublicKey, bump]
+ */
+export function getShareMintPda(business: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("share_mint"), business.toBuffer()],
+    LOCALSHARE_PROGRAM_ID
+  );
+}
+
+/**
+ * Deriva o PDA da Share Mint Authority de um Business
+ * Seeds: ["share_mint_authority", business.toBuffer()]
+ * @param business - PublicKey do business
+ * @returns [PublicKey, bump]
+ */
+export function getShareMintAuthorityPda(business: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("share_mint_authority"), business.toBuffer()],
+    LOCALSHARE_PROGRAM_ID
+  );
+}
+
+/**
+ * Deriva o PDA do Shares Vault de um Business
+ * Seeds: ["shares_vault", business.toBuffer()]
+ * @param business - PublicKey do business
+ * @returns [PublicKey, bump]
+ */
+export function getSharesVaultPda(business: PublicKey): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("shares_vault"), business.toBuffer()],
+    LOCALSHARE_PROGRAM_ID
+  );
+}

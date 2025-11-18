@@ -8,7 +8,7 @@ import { PublicKey } from "@solana/web3.js";
 
 // Program ID on Devnet
 export const PROGRAM_ID = new PublicKey(
-  process.env.NEXT_PUBLIC_PROGRAM_ID || "8sTHpKZ2jbTNBzCxmwFytcift1j6J2Nfj1s9WHGSoE5Y"
+  process.env.NEXT_PUBLIC_PROGRAM_ID || "91CC3aZEnHLe7VvnE9wXwY4TPUTLR4EKfRAZYNjRPM2a"
 );
 
 // Network configuration

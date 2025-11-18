@@ -1,8 +1,8 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
-use anchor_spl::associated_token::{self, AssociatedToken};
+use anchor_spl::token::{self, Mint, Token, TokenAccount};
+use anchor_spl::associated_token::AssociatedToken;
 
-declare_id!("8sTHpKZ2jbTNBzCxmwFytcift1j6J2Nfj1s9WHGSoE5Y");
+declare_id!("91CC3aZEnHLe7VvnE9wXwY4TPUTLR4EKfRAZYNjRPM2a");
 
 /// Localshare Lite Program
 /// Local business investment sharing system
@@ -35,12 +35,13 @@ pub mod my_program {
         Ok(())
     }
 
-    /// Registers a new business in the protocol
+    /// Registers a new business in the protocol or updates an existing one
     /// Allows local entrepreneurs to register and offer shares
     ///
     /// # Security
     /// - Each owner can only have one business (unique PDA per owner)
     /// - Name is validated to not exceed size limit
+    /// - Supports upsert: initializes if new, updates name if exists
     pub fn register_business(
         ctx: Context<RegisterBusiness>,
         name: String,
@@ -49,33 +50,145 @@ pub mod my_program {
         require!(name.len() <= 50, LocalshareError::BusinessNameTooLong);
 
         let business = &mut ctx.accounts.business;
-        business.owner = ctx.accounts.owner.key();
-        business.name = name;
-        business.share_mint = ctx.accounts.mint.key();
-        business.bump = ctx.bumps.business;
+        
+        // Check if business account is newly initialized
+        // If the account was just created, all fields will be at their default values
+        let is_new = business.owner == Pubkey::default();
+        
+        if is_new {
+            // Initialize new business
+            business.owner = ctx.accounts.owner.key();
+            business.name = name.clone();
+            business.share_mint = ctx.accounts.mint.key();
+            business.total_shares = 0;
+            business.price_per_share_lamports = 0;
+            business.treasury = ctx.accounts.owner.key(); // Default to owner as treasury
+            business.is_listed = false;
+            business.bump = ctx.bumps.business;
 
-        let initial_supply: u64 = 100;
-        token::mint_to(
-            CpiContext::new_with_signer(
-                ctx.accounts.token_program.to_account_info(),
-                token::MintTo {
-                    mint: ctx.accounts.mint.to_account_info(),
-                    to: ctx.accounts.owner_token_account.to_account_info(),
-                    authority: ctx.accounts.mint_authority.to_account_info(),
-                },
-                &[&[
-                    b"mint_authority",
-                    business.key().as_ref(),
-                    &[ctx.bumps.mint_authority],
-                ]],
-            ),
-            initial_supply,
-        )?;
+            // Mint initial supply only for new businesses
+            let initial_supply: u64 = 100;
+            token::mint_to(
+                CpiContext::new_with_signer(
+                    ctx.accounts.token_program.to_account_info(),
+                    token::MintTo {
+                        mint: ctx.accounts.mint.to_account_info(),
+                        to: ctx.accounts.owner_token_account.to_account_info(),
+                        authority: ctx.accounts.mint_authority.to_account_info(),
+                    },
+                    &[&[
+                        b"mint_authority",
+                        business.key().as_ref(),
+                        &[ctx.bumps.mint_authority],
+                    ]],
+                ),
+                initial_supply,
+            )?;
+            
+            msg!("✅ New business registered: {}", name);
+        } else {
+            // Update existing business - only allow name update
+            require!(
+                business.owner == ctx.accounts.owner.key(),
+                LocalshareError::InvalidBusinessOwner
+            );
+            
+            business.name = name.clone();
+            msg!("✅ Business name updated: {}", name);
+        }
 
         Ok(())
     }
 
+    /// Configures the offering parameters for a business
+    /// Sets total shares, price per share, and treasury address
+    /// 
+    /// # Security
+    /// - Only the business owner can configure offerings
+    /// - Validates that total_shares and price_per_share are greater than zero
+    /// - Does NOT list the business (is_listed remains false)
+    pub fn configure_offering(
+        ctx: Context<ConfigureOffering>,
+        total_shares: u64,
+        price_per_share_lamports: u64,
+        treasury: Pubkey,
+    ) -> Result<()> {
+        // Validation: total_shares must be greater than zero
+        require!(total_shares > 0, LocalshareError::InvalidShareAmount);
+        
+        // Validation: price_per_share_lamports must be greater than zero
+        require!(price_per_share_lamports > 0, LocalshareError::InvalidPrice);
 
+        // Update business account with new offering configuration
+        let business = &mut ctx.accounts.business;
+        business.total_shares = total_shares;
+        business.price_per_share_lamports = price_per_share_lamports;
+        business.treasury = treasury;
+        // Explicitly keep is_listed as false (do not list the business yet)
+        business.is_listed = false;
+
+        msg!("✅ Offering configured successfully!");
+        msg!("Total shares: {}", total_shares);
+        msg!("Price per share: {} lamports", price_per_share_lamports);
+        msg!("Treasury: {}", treasury);
+
+        Ok(())
+    }
+
+    /// Initializes the share mint and vault for a business
+    /// Creates an SPL mint representing business equity tokens and mints all shares into a vault
+    /// 
+    /// # Security
+    /// - Only the business owner can initialize the share mint
+    /// - Requires that total_shares > 0 (must call configure_offering first)
+    /// - Creates a dedicated mint with decimals = 0 (whole shares only)
+    /// - All shares are minted into a PDA-controlled vault
+    pub fn init_share_mint(ctx: Context<InitShareMint>) -> Result<()> {
+        let business = &mut ctx.accounts.business;
+        
+        // Validation: total_shares must be greater than zero
+        require!(
+            business.total_shares > 0,
+            LocalshareError::InvalidShareAmount
+        );
+
+        // Initialize the share mint authority account
+        let share_mint_authority = &mut ctx.accounts.share_mint_authority;
+        share_mint_authority.business = business.key();
+        share_mint_authority.bump = ctx.bumps.share_mint_authority;
+
+        // Update business account with the new share mint
+        business.share_mint = ctx.accounts.share_mint.key();
+
+        // Mint all total_shares into the shares_vault
+        let business_key = business.key();
+        let seeds = &[
+            b"share_mint_authority",
+            business_key.as_ref(),
+            &[ctx.bumps.share_mint_authority],
+        ];
+        let signer = &[&seeds[..]];
+
+        token::mint_to(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                token::MintTo {
+                    mint: ctx.accounts.share_mint.to_account_info(),
+                    to: ctx.accounts.shares_vault.to_account_info(),
+                    authority: ctx.accounts.share_mint_authority.to_account_info(),
+                },
+                signer,
+            ),
+            business.total_shares,
+        )?;
+
+        msg!("✅ Share mint initialized successfully!");
+        msg!("Share Mint: {}", business.share_mint);
+        msg!("Shares Vault: {}", ctx.accounts.shares_vault.key());
+        msg!("Total Shares Minted: {}", business.total_shares);
+
+        Ok(())
+    }
 
     /// Creates a new share offering for a business
     /// Defines quantity, price, and other share characteristics
@@ -124,7 +237,7 @@ pub mod my_program {
         Ok(())
     }
 
-    /// Allows investors to buy shares of a business
+    /// Allows investors to buy shares from an offering
     /// Performs fund transfer and mints shares to the buyer
     ///
     /// # Security
@@ -132,7 +245,7 @@ pub mod my_program {
     /// - Validates share availability
     /// - Atomic SOL transfer and token minting via CPI
     /// - Automatically deactivates offering when exhausted
-    pub fn buy_shares(ctx: Context<BuyShares>, amount: u64) -> Result<()> {
+    pub fn buy_shares_from_offering(ctx: Context<BuyShares>, amount: u64) -> Result<()> {
         
         // Validation: Offering must be active
         require!(ctx.accounts.offering.is_active, LocalshareError::OfferingNotActive);
@@ -212,6 +325,138 @@ pub mod my_program {
         
         Ok(())
     }
+
+    /// Lists a business on the marketplace
+    /// Sets is_listed to true, making the business available for investment
+    /// 
+    /// # Security
+    /// - Only the business owner can list their business
+    /// - Requires that total_shares > 0
+    /// - Requires that price_per_share_lamports > 0
+    /// - Requires that share_mint is initialized (not default)
+    /// - Prevents double-listing (returns error if already listed)
+    pub fn list_business(ctx: Context<ListBusiness>) -> Result<()> {
+        let business = &mut ctx.accounts.business;
+        
+        // Validation: total_shares must be greater than zero
+        require!(
+            business.total_shares > 0,
+            LocalshareError::InvalidShareAmount
+        );
+        
+        // Validation: price_per_share_lamports must be greater than zero
+        require!(
+            business.price_per_share_lamports > 0,
+            LocalshareError::InvalidPrice
+        );
+        
+        // Validation: share_mint must be initialized (not default)
+        require!(
+            business.share_mint != Pubkey::default(),
+            LocalshareError::InvalidBusiness
+        );
+        
+        // Validation: business must not already be listed
+        require!(
+            !business.is_listed,
+            LocalshareError::BusinessAlreadyListed
+        );
+        
+        // Set business as listed
+        business.is_listed = true;
+        
+        msg!("✅ Business listed successfully!");
+        msg!("Business: {}", business.name);
+        msg!("Total shares: {}", business.total_shares);
+        msg!("Price per share: {} lamports", business.price_per_share_lamports);
+        
+        Ok(())
+    }
+
+    /// Allows investors to buy shares directly from a listed business
+    /// Transfers SOL from buyer to treasury and transfers share tokens from vault to buyer
+    ///
+    /// # Security
+    /// - Requires that the business is listed (is_listed == true)
+    /// - Validates share availability in vault
+    /// - Atomic SOL transfer and token transfer via CPI
+    /// - Overflow protection for price calculations
+    pub fn buy_shares(ctx: Context<BuySharesFromBusiness>, amount_shares: u64) -> Result<()> {
+        let business = &ctx.accounts.business;
+        
+        // Validation: Business must be listed
+        require!(
+            business.is_listed,
+            LocalshareError::OfferingNotActive // Reusing error, or could create new one
+        );
+        
+        // Validation: Amount must be greater than zero
+        require!(
+            amount_shares > 0,
+            LocalshareError::InvalidShareAmount
+        );
+        
+        // Validation: There must be enough shares in the vault
+        require!(
+            ctx.accounts.shares_vault.amount >= amount_shares,
+            LocalshareError::InsufficientShares
+        );
+        
+        // Calculate total cost with overflow protection
+        let amount_lamports = business
+            .price_per_share_lamports
+            .checked_mul(amount_shares)
+            .ok_or(LocalshareError::MathOverflow)?;
+        
+        msg!("💰 Processing purchase of {} shares", amount_shares);
+        msg!("Price per share: {} lamports", business.price_per_share_lamports);
+        msg!("Total cost: {} lamports", amount_lamports);
+        
+        // Transfer SOL from buyer to treasury
+        anchor_lang::system_program::transfer(
+            CpiContext::new(
+                ctx.accounts.system_program.to_account_info(),
+                anchor_lang::system_program::Transfer {
+                    from: ctx.accounts.buyer.to_account_info(),
+                    to: ctx.accounts.treasury.to_account_info(),
+                },
+            ),
+            amount_lamports,
+        )?;
+        
+        msg!("✅ SOL transferred to treasury: {} lamports", amount_lamports);
+        
+        // Transfer share tokens from shares_vault to buyer_shares_ata
+        // The shares_vault authority is share_mint_authority, so we sign with that PDA
+        let business_key = business.key();
+        let seeds = &[
+            b"share_mint_authority",
+            business_key.as_ref(),
+            &[ctx.bumps.share_mint_authority],
+        ];
+        let signer = &[&seeds[..]];
+        
+        token::transfer(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                token::Transfer {
+                    from: ctx.accounts.shares_vault.to_account_info(),
+                    to: ctx.accounts.buyer_shares_ata.to_account_info(),
+                    authority: ctx.accounts.share_mint_authority.to_account_info(),
+                },
+                signer,
+            ),
+            amount_shares,
+        )?;
+        
+        msg!("✅ Shares transferred to buyer: {}", amount_shares);
+        msg!("✅ Purchase completed successfully!");
+        msg!("Buyer: {}", ctx.accounts.buyer.key());
+        msg!("Treasury: {}", ctx.accounts.treasury.key());
+        msg!("Remaining shares in vault: {}", ctx.accounts.shares_vault.amount - amount_shares);
+        
+        Ok(())
+    }
 }
 
 // ============================================================================
@@ -245,6 +490,18 @@ pub struct Business {
     /// Share mint of this business (NFT or Fungible Token)
     pub share_mint: Pubkey,
     
+    /// Total number of shares issued
+    pub total_shares: u64,
+    
+    /// Price per share in lamports
+    pub price_per_share_lamports: u64,
+    
+    /// Treasury account for receiving payments
+    pub treasury: Pubkey,
+    
+    /// Whether the business is listed on the marketplace
+    pub is_listed: bool,
+    
     /// PDA bump seed
     pub bump: u8,
 }
@@ -253,6 +510,16 @@ pub struct Business {
 /// PDA: ["mint_authority", business.key()]
 #[account]
 pub struct MintAuthority {
+    /// Business this authority belongs to
+    pub business: Pubkey,
+    /// Bump seed
+    pub bump: u8,
+}
+
+/// Authority for minting business equity share tokens
+/// PDA: ["share_mint_authority", business.key()]
+#[account]
+pub struct ShareMintAuthority {
     /// Business this authority belongs to
     pub business: Pubkey,
     /// Bump seed
@@ -312,21 +579,25 @@ pub struct InitConfig<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// Context for registering a new business
-/// Allows entrepreneurs to create their business profile
+/// Context for registering a new business or updating an existing one
+/// Allows entrepreneurs to create their business profile or update business name
 #[derive(Accounts)]
 pub struct RegisterBusiness<'info> {
+    /// Business account PDA: ["business", owner.key()]
+    /// Space: 8 (discriminator) + 32 (owner) + (4 + 50) (name) + 32 (share_mint) + 8 (total_shares) + 8 (price_per_share_lamports) + 32 (treasury) + 1 (is_listed) + 1 (bump) = 176 bytes
     #[account(
-        init,
+        init_if_needed,
         seeds = [b"business", owner.key().as_ref()],
         bump,
         payer = owner,
-        space = 8 + 32 + (4 + 50) + 32 + 1
+        space = 8 + 32 + (4 + 50) + 32 + 8 + 8 + 32 + 1 + 1
     )]
     pub business: Account<'info, Business>,
 
+    /// Mint account for business shares
+    /// PDA: ["mint", business.key()]
     #[account(
-        init,
+        init_if_needed,
         seeds = [b"mint", business.key().as_ref()],
         bump,
         payer = owner,
@@ -336,8 +607,10 @@ pub struct RegisterBusiness<'info> {
     )]
     pub mint: Account<'info, Mint>,
 
+    /// Mint authority PDA for the business
+    /// PDA: ["mint_authority", business.key()]
     #[account(
-        init,
+        init_if_needed,
         seeds = [b"mint_authority", business.key().as_ref()],
         bump,
         payer = owner,
@@ -345,6 +618,7 @@ pub struct RegisterBusiness<'info> {
     )]
     pub mint_authority: Account<'info, MintAuthority>,
 
+    /// Owner's token account for receiving shares
     #[account(
         init_if_needed,
         payer = owner,
@@ -353,11 +627,95 @@ pub struct RegisterBusiness<'info> {
     )]
     pub owner_token_account: Account<'info, TokenAccount>,
 
+    /// Business owner (signer)
     #[account(mut)]
     pub owner: Signer<'info>,
 
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
+    pub system_program: Program<'info, System>,
+}
+
+/// Context for configuring a business offering
+/// Allows the business owner to set offering parameters
+#[derive(Accounts)]
+pub struct ConfigureOffering<'info> {
+    /// Business account being configured
+    /// Must be mutable to update offering parameters
+    /// Uses has_one constraint to ensure only the owner can call this
+    #[account(
+        mut,
+        has_one = owner @ LocalshareError::InvalidBusinessOwner
+    )]
+    pub business: Account<'info, Business>,
+
+    /// Business owner (signer)
+    /// Must match the owner field in the business account
+    #[account(mut)]
+    pub owner: Signer<'info>,
+
+    /// System program (for potential future use)
+    pub system_program: Program<'info, System>,
+}
+
+/// Context for initializing the share mint and vault
+/// Creates an SPL mint for business equity tokens and mints all shares into a vault
+#[derive(Accounts)]
+pub struct InitShareMint<'info> {
+    /// Business account being configured
+    /// Must be mutable to update share_mint field
+    /// Uses has_one constraint to ensure only the owner can call this
+    #[account(
+        mut,
+        has_one = owner @ LocalshareError::InvalidBusinessOwner
+    )]
+    pub business: Account<'info, Business>,
+
+    /// Business owner (signer)
+    /// Must match the owner field in the business account
+    #[account(mut)]
+    pub owner: Signer<'info>,
+
+    /// Share mint account for business equity tokens
+    /// PDA: ["share_mint", business.key()]
+    #[account(
+        init,
+        payer = owner,
+        seeds = [b"share_mint", business.key().as_ref()],
+        bump,
+        mint::decimals = 0,
+        mint::authority = share_mint_authority,
+        mint::freeze_authority = share_mint_authority,
+    )]
+    pub share_mint: Account<'info, Mint>,
+
+    /// Authority for the share mint
+    /// PDA: ["share_mint_authority", business.key()]
+    #[account(
+        init,
+        payer = owner,
+        seeds = [b"share_mint_authority", business.key().as_ref()],
+        bump,
+        space = 8 + 32 + 1
+    )]
+    pub share_mint_authority: Account<'info, ShareMintAuthority>,
+
+    /// Token vault for storing all business shares
+    /// PDA: ["shares_vault", business.key()]
+    #[account(
+        init,
+        payer = owner,
+        seeds = [b"shares_vault", business.key().as_ref()],
+        bump,
+        token::mint = share_mint,
+        token::authority = share_mint_authority,
+    )]
+    pub shares_vault: Account<'info, TokenAccount>,
+
+    /// Token program for SPL token operations
+    pub token_program: Program<'info, Token>,
+
+    /// System program for account creation
     pub system_program: Program<'info, System>,
 }
 
@@ -476,6 +834,99 @@ pub struct BuyShares<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
+/// Context for listing a business on the marketplace
+/// Allows the business owner to make their business available for investment
+#[derive(Accounts)]
+pub struct ListBusiness<'info> {
+    /// Business account being listed
+    /// Must be mutable to update is_listed field
+    /// Uses has_one constraint to ensure only the owner can call this
+    #[account(
+        mut,
+        has_one = owner @ LocalshareError::InvalidBusinessOwner
+    )]
+    pub business: Account<'info, Business>,
+
+    /// Business owner (signer)
+    /// Must match the owner field in the business account
+    pub owner: Signer<'info>,
+
+    /// System program (for potential future use)
+    pub system_program: Program<'info, System>,
+}
+
+/// Context for buying shares directly from a listed business
+/// Allows investors to purchase shares by transferring SOL to treasury and receiving tokens from vault
+#[derive(Accounts)]
+pub struct BuySharesFromBusiness<'info> {
+    /// Buyer who is purchasing the shares
+    #[account(mut)]
+    pub buyer: Signer<'info>,
+
+    /// Business account from which shares are being purchased
+    /// Must be mutable to potentially track state changes
+    #[account(
+        mut,
+        constraint = business.share_mint == share_mint.key() @ LocalshareError::InvalidBusiness
+    )]
+    pub business: Account<'info, Business>,
+
+    /// Shares vault PDA that holds all the business shares
+    /// PDA: ["shares_vault", business.key()]
+    #[account(
+        mut,
+        seeds = [b"shares_vault", business.key().as_ref()],
+        bump,
+        constraint = shares_vault.mint == share_mint.key() @ LocalshareError::InvalidBusiness
+    )]
+    pub shares_vault: Account<'info, TokenAccount>,
+
+    /// Treasury account that receives SOL payments
+    /// Must match business.treasury
+    #[account(
+        mut,
+        constraint = treasury.key() == business.treasury @ LocalshareError::InvalidBusiness
+    )]
+    /// CHECK: Validated by constraint above
+    pub treasury: SystemAccount<'info>,
+
+    /// Buyer's associated token account to receive the share tokens
+    #[account(
+        init_if_needed,
+        payer = buyer,
+        associated_token::mint = share_mint,
+        associated_token::authority = buyer,
+    )]
+    pub buyer_shares_ata: Account<'info, TokenAccount>,
+
+    /// Share mint account for the business
+    #[account(
+        constraint = share_mint.key() == business.share_mint @ LocalshareError::InvalidBusiness
+    )]
+    pub share_mint: Account<'info, Mint>,
+
+    /// Share mint authority PDA that controls the shares_vault
+    /// PDA: ["share_mint_authority", business.key()]
+    #[account(
+        seeds = [b"share_mint_authority", business.key().as_ref()],
+        bump,
+        constraint = share_mint_authority.business == business.key() @ LocalshareError::InvalidBusiness
+    )]
+    pub share_mint_authority: Account<'info, ShareMintAuthority>,
+
+    /// Token program for SPL token operations
+    pub token_program: Program<'info, Token>,
+
+    /// System program for SOL transfers
+    pub system_program: Program<'info, System>,
+
+    /// Associated token program for ATA creation
+    pub associated_token_program: Program<'info, AssociatedToken>,
+
+    /// Rent sysvar (for PDA validation)
+    pub rent: Sysvar<'info, Rent>,
+}
+
 // ============================================================================
 // Custom Errors
 // ============================================================================
@@ -508,4 +959,10 @@ pub enum LocalshareError {
     
     #[msg("Invalid business owner")]
     InvalidBusinessOwner,
+    
+    #[msg("Business is already initialized and cannot be re-initialized")]
+    BusinessAlreadyInitialized,
+    
+    #[msg("Business is already listed on the marketplace")]
+    BusinessAlreadyListed,
 }

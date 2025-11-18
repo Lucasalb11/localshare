@@ -2,27 +2,39 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { mockBusinesses } from "../data/mockBusinesses";
-import { MapPin, TrendingUp, Users, Star, Loader2 } from "lucide-react";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { Loader2 } from "lucide-react";
+import Portfolio from "../components/Portfolio";
+import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { useLocalshareProgram } from "../hooks/useLocalshareProgram";
-import { PublicKey } from "@solana/web3.js";
-import * as anchor from "@coral-xyz/anchor";
+import { PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { getSharesVaultPda } from "../lib/localshare";
+
+interface ListedBusiness {
+  publicKey: PublicKey;
+  account: {
+    owner: PublicKey;
+    name: string;
+    shareMint: PublicKey;
+    totalShares: any; // BN
+    pricePerShareLamports: any; // BN
+    treasury: PublicKey;
+    isListed: boolean;
+    bump: number;
+  };
+  availableShares?: number;
+}
 
 export default function MarketplacePage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [businesses, setBusinesses] = useState<any[]>([]);
+  const [businesses, setBusinesses] = useState<ListedBusiness[]>([]);
   const [loading, setLoading] = useState(true);
-  const { connected } = useWallet();
   const { program } = useLocalshareProgram();
-
-  const categories = ["All", "Food", "Automotive Services", "Health and Wellness"];
+  const { connection } = useConnection();
 
   // Fetch businesses from blockchain
   useEffect(() => {
     const fetchBusinesses = async () => {
       if (!program) {
-        setBusinesses(mockBusinesses); // Fallback to mock data
+        setBusinesses([]);
         setLoading(false);
         return;
       }
@@ -30,52 +42,49 @@ export default function MarketplacePage() {
       try {
         setLoading(true);
 
-        // For now, we'll use mock data enhanced with blockchain data
-        // In a real implementation, you'd fetch all businesses from the program
-        const enhancedBusinesses = mockBusinesses.map(async (business) => {
-          try {
-            // Try to fetch real data from blockchain for this business
-            if (!business.ownerPubkey) throw new Error('No owner pubkey')
-            const ownerPk = new PublicKey(business.ownerPubkey)
-            const [businessPda] = PublicKey.findProgramAddressSync(
-              [Buffer.from("business"), ownerPk.toBuffer()],
-              program.programId
-            );
+        // Fetch all business accounts from the program
+        const allBusinesses = await (program.account as any).business.all();
+        
+        // Filter only listed businesses
+        const listedBusinesses = allBusinesses.filter(
+          (b: any) => b.account.isListed === true
+        ) as ListedBusiness[];
 
-            const businessAccount = await (program.account as any).business.fetch(businessPda);
+        // Fetch available shares for each business (from shares vault)
+        const businessesWithShares = await Promise.all(
+          listedBusinesses.map(async (business) => {
+            try {
+              const [sharesVaultPda] = getSharesVaultPda(business.publicKey);
+              const vaultAccount = await connection.getTokenAccountBalance(sharesVaultPda);
+              return {
+                ...business,
+                availableShares: vaultAccount.value.uiAmount || 0,
+              };
+            } catch (error) {
+              console.error(`Error fetching vault for ${business.publicKey.toString()}:`, error);
+              return {
+                ...business,
+                availableShares: 0,
+              };
+            }
+          })
+        );
 
-            // If business exists on chain, use real data
-            return {
-              ...business,
-              onChain: true,
-              name: businessAccount.name,
-              shareMint: businessAccount.shareMint.toString(),
-            };
-          } catch (error) {
-            // Business not found on chain, use mock data
-            return {
-              ...business,
-              onChain: false,
-            };
-          }
-        });
-
-        const resolvedBusinesses = await Promise.all(enhancedBusinesses);
-        setBusinesses(resolvedBusinesses);
+        setBusinesses(businessesWithShares);
       } catch (error) {
         console.error("Error fetching businesses:", error);
-        setBusinesses(mockBusinesses); // Fallback
+        setBusinesses([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchBusinesses();
-  }, [program]);
+  }, [program, connection]);
 
-  const filteredBusinesses = selectedCategory === "All"
-    ? businesses
-    : businesses.filter(b => b.category === selectedCategory);
+  // Note: Category filtering removed since we're fetching from blockchain
+  // You can add category metadata to Business account if needed
+  const filteredBusinesses = businesses;
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -92,29 +101,17 @@ export default function MarketplacePage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="border-b border-slate-800 bg-slate-900/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center gap-4 overflow-x-auto">
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-6 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-                  selectedCategory === category
-                    ? "bg-emerald-500 text-white"
-                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                }`}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      {/* Business Grid */}
+      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Portfolio Sidebar */}
+          <div className="lg:col-span-1">
+            <Portfolio />
+          </div>
+
+          {/* Business Grid */}
+          <div className="lg:col-span-3">
         {loading ? (
           <div className="flex items-center justify-center py-24">
             <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
@@ -122,117 +119,76 @@ export default function MarketplacePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBusinesses.map((business) => (
-            <Link
-              key={business.id}
-              href={`/business/${business.id}`}
-              className="group relative overflow-hidden rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-emerald-500/50 transition-all"
-            >
-              {/* Image */}
-              <div className="relative h-48 overflow-hidden">
-                <img
-                  src={business.images[0]}
-                  alt={business.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/50 to-transparent" />
-                
-                {/* AI Score Badge */}
-                {business.aiAnalysis && (
-                  <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-emerald-500/90 backdrop-blur-sm text-white text-sm font-semibold flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-current" />
-                    {business.aiAnalysis.score}/100
-                  </div>
-                )}
-                
-                {/* Category Badge */}
-                <div className="absolute bottom-4 left-4 px-3 py-1 rounded-full bg-slate-900/90 backdrop-blur-sm text-slate-300 text-xs">
-                  {business.category}
-                </div>
+            {filteredBusinesses.map((business) => {
+              const pricePerShareSol = business.account.pricePerShareLamports.toNumber() / LAMPORTS_PER_SOL;
+              const totalShares = business.account.totalShares.toNumber();
+              const availableShares = business.availableShares || 0;
+              
+              return (
+                <Link
+                  key={business.publicKey.toString()}
+                  href={`/business/${business.publicKey.toString()}`}
+                  className="group relative overflow-hidden rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-emerald-500/50 transition-all"
+                >
+                  {/* Content */}
+                  <div className="p-6 space-y-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-50 mb-2 group-hover:text-emerald-400 transition-colors">
+                        {business.account.name}
+                      </h3>
+                    </div>
 
-                {/* On-chain indicator */}
-                {business.onChain && (
-                  <div className="absolute top-4 left-4 px-2 py-1 rounded-full bg-emerald-500/90 backdrop-blur-sm text-white text-xs font-medium flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
-                    On-chain
-                  </div>
-                )}
-              </div>
+                    {/* Price per share */}
+                    <div className="pt-4 border-t border-slate-800">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-slate-400">Price per share</span>
+                        <span className="text-lg font-semibold text-emerald-400">
+                          {pricePerShareSol.toFixed(4)} SOL
+                        </span>
+                      </div>
+                    </div>
 
-              {/* Content */}
-              <div className="p-6 space-y-4">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-50 mb-2 group-hover:text-emerald-400 transition-colors">
-                    {business.name}
-                  </h3>
-                  <p className="text-sm text-slate-400 line-clamp-2">
-                    {business.shortDescription}
-                  </p>
-                </div>
+                    {/* Shares Info */}
+                    <div className="pt-4 border-t border-slate-800">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-slate-400">Available shares</span>
+                        <span className="text-sm font-semibold text-slate-50">
+                          {availableShares.toLocaleString()}/{totalShares.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-emerald-500 to-sky-500"
+                          style={{
+                            width: `${totalShares > 0 ? (availableShares / totalShares) * 100 : 0}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
 
-                {/* Location */}
-                <div className="flex items-center gap-2 text-sm text-slate-400">
-                  <MapPin className="w-4 h-4" />
-                  <span>{business.location.city}, {business.location.state}</span>
-                </div>
-
-                {/* Metrics */}
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-800">
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1">Return/year</p>
-                    <div className="flex items-center gap-1 text-emerald-400 font-semibold">
-                      <TrendingUp className="w-4 h-4" />
-                      <span>{business.financials.yearlyGrowth.toFixed(1)}%</span>
+                    {/* Treasury */}
+                    <div className="pt-2">
+                      <p className="text-xs text-slate-500">Treasury</p>
+                      <p className="text-xs text-slate-400 font-mono truncate">
+                        {business.account.treasury.toString().slice(0, 8)}...
+                      </p>
                     </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1">Valuation</p>
-                    <p className="text-slate-50 font-semibold">
-                      ${(business.financials.valuation / 1000).toFixed(0)}k
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1">Rating</p>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-slate-50 font-semibold">{business.metrics.rating}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Investment Info */}
-                <div className="pt-4 border-t border-slate-800">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-slate-400">Available shares</span>
-                    <span className="text-sm font-semibold text-slate-50">
-                      {business.sharesInfo.availableShares}/{business.sharesInfo.totalShares}
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-500 to-sky-500"
-                      style={{
-                        width: `${(business.sharesInfo.availableShares / business.sharesInfo.totalShares) * 100}%`,
-                      }}
-                    />
-                  </div>
-                  <p className="text-xs text-slate-500 mt-2">
-                    From ${business.sharesInfo.minInvestment.toLocaleString('en-US')}
-                  </p>
-                </div>
-              </div>
-            </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
 
         {!loading && filteredBusinesses.length === 0 && (
           <div className="text-center py-24">
             <p className="text-slate-400 text-lg">
-              No businesses found in this category.
+              No listed businesses found. Check back later!
             </p>
           </div>
         )}
+          </div>
+        </div>
       </div>
     </div>
   );
