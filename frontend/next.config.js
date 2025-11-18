@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const webpack = require('webpack');
+
 const nextConfig = {
   // External images configuration (Unsplash, avatars)
   images: {
@@ -55,6 +57,21 @@ const nextConfig = {
         os: false,
       };
     }
+    
+    // Ignore optional dependencies that cause build issues
+    // pino-pretty is an optional dev dependency of pino
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      'pino-pretty': false,
+    };
+    
+    // Ignore module resolution for optional dependencies
+    config.plugins = config.plugins || [];
+    config.plugins.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /^pino-pretty$/,
+      })
+    );
     
     // Optimize bundle size
     config.optimization = {

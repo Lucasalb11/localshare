@@ -45,60 +45,37 @@ pub mod my_program {
         ctx: Context<RegisterBusiness>,
         name: String,
     ) -> Result<()> {
-        let business = &mut ctx.accounts.business;
-
-        // Validation: Name cannot be empty
         require!(!name.is_empty(), LocalshareError::EmptyBusinessName);
-
-        // Validation: Name cannot exceed 50 characters
         require!(name.len() <= 50, LocalshareError::BusinessNameTooLong);
 
-        // Calculate the share mint PDA (will be created in create_business_mint)
-        let (share_mint, _) = Pubkey::find_program_address(
-            &[b"mint", business.key().as_ref()],
-            ctx.program_id,
-        );
-
-        // Initialize business fields
+        let business = &mut ctx.accounts.business;
         business.owner = ctx.accounts.owner.key();
-        business.name = name.clone();
-        business.share_mint = share_mint;
+        business.name = name;
+        business.share_mint = ctx.accounts.mint.key();
         business.bump = ctx.bumps.business;
 
-        msg!("✅ Business registered successfully!");
-        msg!("Name: {}", name);
-        msg!("Owner: {}", business.owner);
-        msg!("Share Mint (PDA): {}", business.share_mint);
+        let initial_supply: u64 = 100;
+        token::mint_to(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                token::MintTo {
+                    mint: ctx.accounts.mint.to_account_info(),
+                    to: ctx.accounts.owner_token_account.to_account_info(),
+                    authority: ctx.accounts.mint_authority.to_account_info(),
+                },
+                &[&[
+                    b"mint_authority",
+                    business.key().as_ref(),
+                    &[ctx.bumps.mint_authority],
+                ]],
+            ),
+            initial_supply,
+        )?;
 
         Ok(())
     }
 
-    /// Creates a mint for business shares
-    /// Each business gets its own SPL token representing shares
-    ///
-    /// # Security
-    /// - Only the business owner can create the mint
-    /// - Mint is created as PDA for security
-    pub fn create_business_mint(ctx: Context<CreateBusinessMint>) -> Result<()> {
-        let business = &ctx.accounts.business;
-        let mint = &ctx.accounts.mint;
-        let mint_authority = &mut ctx.accounts.mint_authority;
 
-        // Validate that the signer is the business owner
-        require!(business.owner == ctx.accounts.owner.key(), LocalshareError::InvalidBusinessOwner);
-
-        // Initialize mint authority
-        mint_authority.business = business.key();
-        mint_authority.bump = ctx.bumps.mint_authority;
-
-        msg!("✅ Business share mint created successfully!");
-        msg!("Business: {}", business.name);
-        msg!("Mint: {}", mint.key());
-        msg!("Mint Authority: {}", ctx.accounts.mint_authority.key());
-        msg!("Owner: {}", business.owner);
-
-        Ok(())
-    }
 
     /// Creates a new share offering for a business
     /// Defines quantity, price, and other share characteristics
@@ -112,22 +89,30 @@ pub mod my_program {
         price_per_share: u64,
         initial_shares: u64,
     ) -> Result<()> {
+        require!(price_per_share > 0, LocalshareError::InvalidPrice);
+        require!(initial_shares > 0, LocalshareError::InvalidShareAmount);
+        price_per_share.checked_mul(initial_shares).ok_or(LocalshareError::MathOverflow)?;
+
+        require!(
+            ctx.accounts.owner_token_account.amount >= initial_shares,
+            LocalshareError::InsufficientShares
+        );
+
+        token::transfer(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                token::Transfer {
+                    from: ctx.accounts.owner_token_account.to_account_info(),
+                    to: ctx.accounts.offering_vault.to_account_info(),
+                    authority: ctx.accounts.owner.to_account_info(),
+                },
+            ),
+            initial_shares,
+        )?;
+
         let offering = &mut ctx.accounts.offering;
         let business = &ctx.accounts.business;
         let config = &ctx.accounts.config;
-        
-        // Validation: Price must be greater than zero
-        require!(price_per_share > 0, LocalshareError::InvalidPrice);
-        
-        // Validation: Initial share quantity must be greater than zero
-        require!(initial_shares > 0, LocalshareError::InvalidShareAmount);
-        
-        // Validation: Prevent overflow in total value calculation
-        let _total_value = price_per_share
-            .checked_mul(initial_shares)
-            .ok_or(LocalshareError::MathOverflow)?;
-        
-        // Initialize offering fields
         offering.business = business.key();
         offering.share_mint = business.share_mint;
         offering.payment_mint = config.payment_mint;
@@ -135,12 +120,7 @@ pub mod my_program {
         offering.remaining_shares = initial_shares;
         offering.is_active = true;
         offering.bump = ctx.bumps.offering;
-        
-        msg!("✅ Offering created successfully!");
-        msg!("Business: {}", offering.business);
-        msg!("Price per share: {} lamports", price_per_share);
-        msg!("Shares available: {}", initial_shares);
-        
+
         Ok(())
     }
 
@@ -153,22 +133,25 @@ pub mod my_program {
     /// - Atomic SOL transfer and token minting via CPI
     /// - Automatically deactivates offering when exhausted
     pub fn buy_shares(ctx: Context<BuyShares>, amount: u64) -> Result<()> {
-        let offering = &mut ctx.accounts.offering;
         
         // Validation: Offering must be active
-        require!(offering.is_active, LocalshareError::OfferingNotActive);
+        require!(ctx.accounts.offering.is_active, LocalshareError::OfferingNotActive);
         
         // Validation: Amount must be greater than zero
         require!(amount > 0, LocalshareError::InvalidShareAmount);
         
         // Validation: There must be enough shares available
         require!(
-            amount <= offering.remaining_shares,
+            amount <= ctx.accounts.offering.remaining_shares,
+            LocalshareError::InsufficientShares
+        );
+        require!(
+            ctx.accounts.offering_vault.amount >= amount,
             LocalshareError::InsufficientShares
         );
         
         // Calculate total cost with overflow protection
-        let total_cost = offering
+        let total_cost = ctx.accounts.offering
             .price_per_share
             .checked_mul(amount)
             .ok_or(LocalshareError::MathOverflow)?;
@@ -188,25 +171,29 @@ pub mod my_program {
             total_cost,
         )?;
 
-        // Mint shares to the buyer using SPL Token program
-        token::mint_to(
+        let offering_bump = ctx.accounts.offering.bump;
+        let business_key = ctx.accounts.business.key();
+        let mint_key = ctx.accounts.mint.key();
+        token::transfer(
             CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
-                token::MintTo {
-                    mint: ctx.accounts.mint.to_account_info(),
+                token::Transfer {
+                    from: ctx.accounts.offering_vault.to_account_info(),
                     to: ctx.accounts.buyer_token_account.to_account_info(),
-                    authority: ctx.accounts.mint_authority.to_account_info(),
+                    authority: ctx.accounts.offering.to_account_info(),
                 },
                 &[&[
-                    b"mint_authority",
-                    ctx.accounts.business.key().as_ref(),
-                    &[ctx.accounts.mint_authority.bump],
+                    b"offering",
+                    business_key.as_ref(),
+                    mint_key.as_ref(),
+                    &[offering_bump],
                 ]],
             ),
             amount,
         )?;
 
         // Update remaining shares count
+        let offering = &mut ctx.accounts.offering;
         offering.remaining_shares = offering
             .remaining_shares
             .checked_sub(amount)
@@ -220,7 +207,7 @@ pub mod my_program {
 
         msg!("✅ Purchase completed successfully!");
         msg!("Buyer: {}", ctx.accounts.buyer.key());
-        msg!("Shares minted: {}", amount);
+        msg!("Shares transferred: {}", amount);
         msg!("Remaining shares: {}", offering.remaining_shares);
         
         Ok(())
@@ -329,8 +316,6 @@ pub struct InitConfig<'info> {
 /// Allows entrepreneurs to create their business profile
 #[derive(Accounts)]
 pub struct RegisterBusiness<'info> {
-    /// Business account being initialized as PDA
-    /// Space: 8 (discriminator) + 32 (owner) + (4 + 50) (name String) + 32 (share_mint) + 1 (bump) = 127 bytes
     #[account(
         init,
         seeds = [b"business", owner.key().as_ref()],
@@ -339,40 +324,18 @@ pub struct RegisterBusiness<'info> {
         space = 8 + 32 + (4 + 50) + 32 + 1
     )]
     pub business: Account<'info, Business>,
-    
-    /// Business owner (entrepreneur who pays for creation)
-    #[account(mut)]
-    pub owner: Signer<'info>,
-    
-    /// System program to create the account
-    pub system_program: Program<'info, System>,
-}
 
-/// Context for creating a business share mint
-/// Creates the SPL token mint and mint authority for a business
-#[derive(Accounts)]
-pub struct CreateBusinessMint<'info> {
-    /// Business account that will own the mint
-    #[account(
-        mut,
-        constraint = business.owner == owner.key() @ LocalshareError::InvalidBusinessOwner
-    )]
-    pub business: Account<'info, Business>,
-
-    /// Mint account for business shares (SPL Token)
-    /// Space: 82 bytes for Mint account
     #[account(
         init,
         seeds = [b"mint", business.key().as_ref()],
         bump,
         payer = owner,
-        mint::decimals = 0,      // Whole shares only
+        mint::decimals = 0,
         mint::authority = mint_authority.key(),
         mint::freeze_authority = mint_authority.key(),
     )]
     pub mint: Account<'info, Mint>,
 
-    /// Mint authority PDA that controls the mint
     #[account(
         init,
         seeds = [b"mint_authority", business.key().as_ref()],
@@ -382,27 +345,30 @@ pub struct CreateBusinessMint<'info> {
     )]
     pub mint_authority: Account<'info, MintAuthority>,
 
-    /// Business owner (must sign and pay)
+    #[account(
+        init_if_needed,
+        payer = owner,
+        associated_token::mint = mint,
+        associated_token::authority = owner,
+    )]
+    pub owner_token_account: Account<'info, TokenAccount>,
+
     #[account(mut)]
     pub owner: Signer<'info>,
 
-    /// Rent sysvar for PDA validation
-    pub rent: Sysvar<'info, Rent>,
-
-    /// Token program
     pub token_program: Program<'info, Token>,
-
-    /// System program
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
+
+/// Context for creating a business share mint
+/// Creates the SPL token mint and mint authority for a business
+
 
 /// Context for creating a share offering
 /// Allows a registered business to create a share offering
 #[derive(Accounts)]
 pub struct CreateOffering<'info> {
-    /// Offering account being initialized as PDA
-    /// Space: 8 (discriminator) + 32 (business) + 32 (share_mint) + 32 (payment_mint) + 
-    ///        8 (price_per_share) + 8 (remaining_shares) + 1 (is_active) + 1 (bump) = 122 bytes
     #[account(
         init,
         seeds = [b"offering", business.key().as_ref(), business.share_mint.as_ref()],
@@ -411,24 +377,42 @@ pub struct CreateOffering<'info> {
         space = 8 + 32 + 32 + 32 + 8 + 8 + 1 + 1
     )]
     pub offering: Account<'info, Offering>,
-    
-    /// Business account creating the offering
-    /// Must have has_one = owner for validation
+
     #[account(has_one = owner)]
     pub business: Account<'info, Business>,
-    
-    /// Global Config account to get the payment_mint
+
     #[account(
         seeds = [b"config"],
         bump = config.bump
     )]
     pub config: Account<'info, Config>,
-    
-    /// Business owner (must sign and pay)
+
+    #[account(
+        constraint = business.share_mint == mint.key() @ LocalshareError::InvalidBusiness
+    )]
+    pub mint: Account<'info, Mint>,
+
+    #[account(
+        mut,
+        constraint = owner_token_account.owner == owner.key() @ LocalshareError::InvalidBusinessOwner,
+        constraint = owner_token_account.mint == mint.key() @ LocalshareError::InvalidBusiness
+    )]
+    pub owner_token_account: Account<'info, TokenAccount>,
+
+    #[account(
+        init_if_needed,
+        payer = owner,
+        associated_token::mint = mint,
+        associated_token::authority = offering,
+        constraint = offering_vault.owner == offering.key() @ LocalshareError::InvalidBusiness,
+    )]
+    pub offering_vault: Account<'info, TokenAccount>,
+
     #[account(mut)]
     pub owner: Signer<'info>,
-    
-    /// System program to create the account
+
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
     pub system_program: Program<'info, System>,
 }
 
@@ -455,12 +439,11 @@ pub struct BuyShares<'info> {
     )]
     pub mint: Account<'info, Mint>,
 
-    /// Mint authority PDA that controls the minting
     #[account(
-        seeds = [b"mint_authority", business.key().as_ref()],
-        bump,
+        mut,
+        constraint = offering_vault.mint == mint.key() @ LocalshareError::InvalidBusiness,
     )]
-    pub mint_authority: Account<'info, MintAuthority>,
+    pub offering_vault: Account<'info, TokenAccount>,
 
     /// Buyer's token account to receive the shares
     #[account(
@@ -484,9 +467,7 @@ pub struct BuyShares<'info> {
     /// Token program (for SPL token operations)
     pub token_program: Program<'info, Token>,
 
-    /// Associated token program (for creating token accounts)
-    /// CHECK: Validated by anchor
-    pub associated_token_program: UncheckedAccount<'info>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
 
     /// System program (for SOL transfers and account creation)
     pub system_program: Program<'info, System>,

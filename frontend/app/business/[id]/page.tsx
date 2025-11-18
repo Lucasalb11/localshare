@@ -6,7 +6,7 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey, SystemProgram, LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { mockBusinesses } from "../../data/mockBusinesses";
 import { useLocalshareProgram } from "../../hooks/useLocalshareProgram";
-import { getBusinessPda, getOfferingPda, getMintPda, getMintAuthorityPda } from "../../lib/localshare";
+import { getBusinessPda, getOfferingPda, getMintPda } from "../../lib/localshare";
 import * as anchor from "@coral-xyz/anchor";
 import {
   MapPin,
@@ -83,8 +83,37 @@ export default function BusinessDetailPage({ params }: PageProps) {
       // Get PDAs
       const [businessPdaKey] = getBusinessPda(mockOwnerPubkey);
       const [mintPda] = getMintPda(businessPdaKey);
-      const [mintAuthorityPda] = getMintAuthorityPda(businessPdaKey);
       const [offeringPdaKey] = getOfferingPda(businessPdaKey, mintPda);
+
+      // Check if offering exists before attempting to buy
+      setStatus("Checking offering availability...");
+      try {
+        const offeringAccount = await program.account.offering.fetch(offeringPdaKey);
+        if (!offeringAccount.isActive) {
+          setStatus("❌ This offering is no longer active");
+          setStatusType("error");
+          setLoading(false);
+          return;
+        }
+        if (offeringAccount.remainingShares.toNumber() < shares) {
+          setStatus(`❌ Insufficient shares available. Only ${offeringAccount.remainingShares.toNumber()} shares remaining.`);
+          setStatusType("error");
+          setLoading(false);
+          return;
+        }
+      } catch (fetchError: any) {
+        // Account doesn't exist or other error
+        if (fetchError.message?.includes("AccountNotInitialized") || 
+            fetchError.message?.includes("3012") ||
+            fetchError.code === 3012) {
+          setStatus("❌ This business hasn't created an offering yet. The owner needs to create an offering before investors can buy shares.");
+          setStatusType("error");
+          setLoading(false);
+          return;
+        }
+        // Re-throw if it's a different error
+        throw fetchError;
+      }
 
       // Get the associated token account for the buyer
       const buyerTokenAccount = await anchor.utils.token.associatedAddress({
@@ -127,7 +156,26 @@ export default function BusinessDetailPage({ params }: PageProps) {
       }, 1000);
     } catch (error: any) {
       console.error("Error buying shares:", error);
-      setStatus(`❌ Error: ${error.message || "Transaction failed"}`);
+      
+      // Better error handling for common Anchor errors
+      let errorMessage = "Transaction failed";
+      
+      if (error.message?.includes("AccountNotInitialized") || 
+          error.message?.includes("3012") ||
+          error.code === 3012) {
+        errorMessage = "This business hasn't created an offering yet. The owner needs to create an offering before investors can buy shares.";
+      } else if (error.message?.includes("OfferingNotActive") || 
+                 error.message?.includes("Offering is not active")) {
+        errorMessage = "This offering is no longer active.";
+      } else if (error.message?.includes("InsufficientShares")) {
+        errorMessage = "Insufficient shares available for this purchase.";
+      } else if (error.message?.includes("InsufficientFunds")) {
+        errorMessage = "Insufficient SOL balance. Please add more funds to your wallet.";
+      } else {
+        errorMessage = error.message || "Transaction failed. Please try again.";
+      }
+      
+      setStatus(`❌ Error: ${errorMessage}`);
       setStatusType("error");
     } finally {
       setLoading(false);

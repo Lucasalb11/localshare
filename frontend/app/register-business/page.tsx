@@ -72,8 +72,22 @@ export default function RegisterBusinessPage() {
           .rpc();
       } catch (_) {}
 
+      // Ensure the name is a valid string (not empty and within limits)
+      const businessName = formData.name.trim();
+      
+      // Log for debugging
+      console.log("Registering business with:", {
+        name: businessName,
+        businessPda: businessPda.toString(),
+        mintPda: mintPda.toString(),
+        mintAuthorityPda: mintAuthorityPda.toString(),
+        ownerTokenAccount: ownerTokenAccount.toString(),
+        owner: publicKey.toString(),
+        programId: program.programId.toString(),
+      });
+      
       const tx = await program.methods
-        .registerBusiness(formData.name)
+        .registerBusiness(businessName)
         .accounts({
           business: businessPda,
           mint: mintPda,
@@ -92,7 +106,27 @@ export default function RegisterBusinessPage() {
 
     } catch (error: any) {
       console.error("Error registering business:", error);
-      setStatus(`❌ Error: ${error.message || "Registration failed"}`);
+      console.error("Full error:", JSON.stringify(error, null, 2));
+      
+      // Better error handling for common Anchor errors
+      let errorMessage = "Registration failed";
+      
+      if (error.message?.includes("InstructionDidNotDeserialize") || 
+          error.message?.includes("102") ||
+          error.code === 102) {
+        errorMessage = "IDL mismatch detected. The program interface may have changed. Please rebuild the Anchor program and sync the IDL.";
+      } else if (error.message?.includes("AccountNotInitialized") || 
+                 error.message?.includes("3012")) {
+        errorMessage = "Account initialization failed. Please try again.";
+      } else if (error.message?.includes("InsufficientFunds")) {
+        errorMessage = "Insufficient SOL balance. Please add more funds to your wallet.";
+      } else if (error.message?.includes("Constraint")) {
+        errorMessage = `Validation error: ${error.message}`;
+      } else {
+        errorMessage = error.message || "Registration failed. Please try again.";
+      }
+      
+      setStatus(`❌ Error: ${errorMessage}`);
       setStatusType("error");
     } finally {
       setLoading(false);

@@ -16,7 +16,19 @@ export const LOCALSHARE_PROGRAM_ID = new PublicKey(
  * @returns Program instance
  */
 export function getLocalshareProgram(provider: AnchorProvider): Program<Idl> {
-  return new Program(idl as Idl, provider);
+  try {
+    const program = new Program(idl as Idl, LOCALSHARE_PROGRAM_ID, provider);
+    
+    // Verify program ID matches
+    if (!program.programId.equals(LOCALSHARE_PROGRAM_ID)) {
+      console.warn("Program ID mismatch detected");
+    }
+    
+    return program;
+  } catch (error) {
+    console.error("Error creating program instance:", error);
+    throw error;
+  }
 }
 
 /**
