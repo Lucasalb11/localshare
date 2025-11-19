@@ -151,21 +151,20 @@ export default function BusinessDetailPage({ params }: PageProps) {
       setStatus("Sending transaction to blockchain...");
 
       // Call buy_shares instruction for listed businesses
-      // Note: The IDL might have this as buy_shares with different accounts
-      // We're using the accounts structure from BuySharesFromBusiness context
+      // Account names must match the IDL (snake_case)
       const tx = await (program.methods as any)
         .buyShares(new anchor.BN(shares))
         .accounts({
           buyer: publicKey,
           business: businessPubkey,
-          sharesVault: sharesVaultPda,
+          shares_vault: sharesVaultPda,
           treasury: business.treasury,
-          buyerSharesAta: buyerSharesAta,
-          shareMint: shareMintPda,
-          shareMintAuthority: shareMintAuthorityPda,
-          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
-          associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
+          buyer_shares_ata: buyerSharesAta,
+          share_mint: shareMintPda,
+          share_mint_authority: shareMintAuthorityPda,
+          token_program: anchor.utils.token.TOKEN_PROGRAM_ID,
+          system_program: SystemProgram.programId,
+          associated_token_program: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
           rent: anchor.web3.SYSVAR_RENT_PUBKEY,
         })
         .rpc();

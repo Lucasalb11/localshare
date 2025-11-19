@@ -59,31 +59,18 @@ pub mod my_program {
             // Initialize new business
             business.owner = ctx.accounts.owner.key();
             business.name = name.clone();
-            business.share_mint = ctx.accounts.mint.key();
+            // share_mint will be set later by init_share_mint
+            // For now, set to default (Pubkey::default())
+            business.share_mint = Pubkey::default();
             business.total_shares = 0;
             business.price_per_share_lamports = 0;
             business.treasury = ctx.accounts.owner.key(); // Default to owner as treasury
             business.is_listed = false;
             business.bump = ctx.bumps.business;
 
-            // Mint initial supply only for new businesses
-            let initial_supply: u64 = 100;
-            token::mint_to(
-                CpiContext::new_with_signer(
-                    ctx.accounts.token_program.to_account_info(),
-                    token::MintTo {
-                        mint: ctx.accounts.mint.to_account_info(),
-                        to: ctx.accounts.owner_token_account.to_account_info(),
-                        authority: ctx.accounts.mint_authority.to_account_info(),
-                    },
-                    &[&[
-                        b"mint_authority",
-                        business.key().as_ref(),
-                        &[ctx.bumps.mint_authority],
-                    ]],
-                ),
-                initial_supply,
-            )?;
+            // Note: The old mint (ctx.accounts.mint) is kept for backward compatibility
+            // with the old offering flow, but the new flow uses share_mint created
+            // in init_share_mint. We don't mint shares here anymore.
             
             msg!("✅ New business registered: {}", name);
         } else {

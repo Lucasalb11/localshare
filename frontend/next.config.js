@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const webpack = require('webpack');
+const path = require('path');
 
 const nextConfig = {
   // External images configuration (Unsplash, avatars)
@@ -49,27 +50,35 @@ const nextConfig = {
   
   // Webpack config for Solana/Anchor compatibility
   webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
+    // Configure fallbacks for both server and client
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      // Node.js modules that don't exist in browser
+      ...(!isServer && {
         fs: false,
         path: false,
         os: false,
-      };
-    }
-    
-    // Ignore optional dependencies that cause build issues
-    // pino-pretty is an optional dev dependency of pino
-    config.resolve.alias = {
-      ...(config.resolve.alias || {}),
+      }),
+      // pino-pretty is an optional dependency that causes build issues
       'pino-pretty': false,
     };
     
+    // Ignore optional dependencies that cause build issues
+    // pino-pretty is an optional dev dependency of pino
+    // This needs to be applied to both server and client builds
+    // Use stub module as fallback to prevent resolution errors
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      'pino-pretty': path.resolve(__dirname, 'pino-pretty-stub.js'),
+    };
+    
     // Ignore module resolution for optional dependencies
+    // Apply to both server and client builds
     config.plugins = config.plugins || [];
     config.plugins.push(
       new webpack.IgnorePlugin({
         resourceRegExp: /^pino-pretty$/,
+        contextRegExp: /node_modules\/pino/,
       })
     );
     

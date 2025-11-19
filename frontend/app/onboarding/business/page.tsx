@@ -66,7 +66,7 @@ export default function OnboardingBusinessPage() {
           .accounts({
             config: configPda,
             admin: publicKey,
-            systemProgram: SystemProgram.programId,
+            system_program: SystemProgram.programId,
           })
           .rpc();
       } catch (_) {
@@ -89,12 +89,12 @@ export default function OnboardingBusinessPage() {
         .accounts({
           business: businessPda,
           mint: mintPda,
-          mintAuthority: mintAuthorityPda,
-          ownerTokenAccount: ownerTokenAccount,
+          mint_authority: mintAuthorityPda,
+          owner_token_account: ownerTokenAccount,
           owner: publicKey,
-          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
-          associatedTokenProgram: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
+          token_program: anchor.utils.token.TOKEN_PROGRAM_ID,
+          associated_token_program: anchor.utils.token.ASSOCIATED_PROGRAM_ID,
+          system_program: SystemProgram.programId,
         })
         .rpc();
 

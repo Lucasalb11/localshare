@@ -116,7 +116,7 @@ export default function DashboardBusinessPage() {
         .accounts({
           business: businessPda,
           owner: publicKey,
-          systemProgram: SystemProgram.programId,
+          system_program: SystemProgram.programId,
         })
         .rpc();
 
@@ -160,11 +160,11 @@ export default function DashboardBusinessPage() {
         .accounts({
           business: businessPda,
           owner: publicKey,
-          shareMint: shareMintPda,
-          shareMintAuthority: shareMintAuthorityPda,
-          sharesVault: sharesVaultPda,
-          tokenProgram: anchor.utils.token.TOKEN_PROGRAM_ID,
-          systemProgram: SystemProgram.programId,
+          share_mint: shareMintPda,
+          share_mint_authority: shareMintAuthorityPda,
+          shares_vault: sharesVaultPda,
+          token_program: anchor.utils.token.TOKEN_PROGRAM_ID,
+          system_program: SystemProgram.programId,
         })
         .rpc();
 
@@ -205,7 +205,7 @@ export default function DashboardBusinessPage() {
         .accounts({
           business: businessPda,
           owner: publicKey,
-          systemProgram: SystemProgram.programId,
+          system_program: SystemProgram.programId,
         })
         .rpc();
 
